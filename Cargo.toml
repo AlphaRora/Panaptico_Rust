@@ -1,0 +1,15 @@
+[package]
+name = "panaptico_rust"
+version = "0.1.0"
+edition = "2021"
+description = "Panaptico"
+license = "Apache-2.0"
+authors = ["Adoba <adoba@panaptico.com>"]
+
+[package.metadata.bundle]
+name = "panaptico_rust"
+identifier = "com.example.panaptico_rust"
+version = "0.1.0"
+copyright = "2023 Adoba"
+
+[dependencies]
