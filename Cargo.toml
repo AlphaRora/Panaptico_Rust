@@ -13,3 +13,5 @@ version = "0.1.0"
 copyright = "2023 Adoba"
 
 [dependencies]
+tokio = { version = "1.21.2", features = ["full"] }
+tokio-tungstenite = "0.17.2"
