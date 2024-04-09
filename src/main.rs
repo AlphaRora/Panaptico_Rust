@@ -1,3 +1,5 @@
+mod command_executor;
+
 fn main() {
-    println!("Hello, world!");
+    command_executor::execute_bash_command();
 }
