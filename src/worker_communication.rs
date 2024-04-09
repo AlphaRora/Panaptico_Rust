@@ -1,8 +1,13 @@
 // src/worker_communication.rs
 use reqwest::Client;
 
-pub async fn send_command_request(worker_url: &str) -> String {
+pub async fn send_data_request(worker_url: &str, data: &str) -> String {
     let client = Client::new();
-    let response = client.get(worker_url).send().await.unwrap();
+    let response = client
+        .post(worker_url)
+        .body(data.to_owned())
+        .send()
+        .await
+        .unwrap();
     response.text().await.unwrap()
 }
