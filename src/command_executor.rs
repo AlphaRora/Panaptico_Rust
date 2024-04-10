@@ -1,11 +1,13 @@
-pub fn execute_bash_command(request_successful: bool) {
+// command_executor.rs
+use std::process::Command;
+
+pub fn execute_bash_command(request_successful: bool) -> std::io::Result<std::process::Output> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return;
+        return Ok(std::process::Output::default());
     }
 
     println!("Request to Cloudflare Worker was successful. Printing something else.");
-
     let command = r#"
         interval=5;
         process_name="tritonserver --model-repository=/mnt/models";
@@ -23,12 +25,10 @@ pub fn execute_bash_command(request_successful: bool) {
         done
     "#;
 
-    let mut child = Command::new("bash")
+    let output = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .spawn()
-        .expect("Failed to spawn child process");
+        .output()?;
 
-    // Handle the child process output if needed
-    // ...
+    Ok(output)
 }
