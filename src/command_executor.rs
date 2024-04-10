@@ -1,17 +1,25 @@
+// src/command_executor.rs
+use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use std::io::{BufReader, BufRead, Error, ErrorKind};
+use std::thread;
+use std::time::Duration;
 
-pub async fn execute_bash_command(request_successful: bool) -> Result<(), std::io::Error> {
+pub fn execute_bash_command(
+    request_successful: bool,
+    send_data: &mut dyn FnMut(String) -> Result<(), reqwest::Error>,
+) -> Result<(), std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
         return Ok(());
+    } else {
+        println!("Request to Cloudflare Worker was successful. Printing something else.");
     }
 
     let command = r#"
         interval=5;
         process_name="tritonserver --model-repository=/mnt/models";
         pid=$(pgrep -f "$process_name");
-        if [ -z "$pid" ]; then
+        if [[ -z "$pid" ]]; then
             echo "Error: Inference process not found. Please provide the correct process name.";
             exit 1;
         fi;
@@ -30,17 +38,19 @@ pub async fn execute_bash_command(request_successful: bool) -> Result<(), std::i
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let stdout = child.stdout.as_mut().expect("Failed to get stdout");
-    let reader = BufReader::new(stdout);
+    let stdout = child.stdout.take().unwrap();
+    let stdout_reader = BufReader::new(stdout);
 
-    for line in reader.lines() {
-        let line = line?;
-        let worker_url = "https://serverworker.adoba.workers.dev/";
-        match worker_communication::send_data_request(&worker_url, &line).await {
-            Ok(_) => (),
-            Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+    thread::spawn(move || {
+        for line in stdout_reader.lines() {
+            if let Ok(output) = line {
+                if let Err(e) = send_data(output) {
+                    eprintln!("Error sending data to Worker: {}", e);
+                }
+            }
+            thread::sleep(Duration::from_secs(5)); // Adjust the delay as needed
         }
-    }
+    });
 
     Ok(())
 }
