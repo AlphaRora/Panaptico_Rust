@@ -41,17 +41,16 @@ pub fn execute_bash_command(
     let stdout = child.stdout.take().unwrap();
     let stdout_reader = BufReader::new(stdout);
 
-    tokio::spawn(async move {
+    tokio::task::spawn_blocking(move || {
         for line in stdout_reader.lines() {
             if let Ok(output) = line {
                 if let Err(e) = send_data(output) {
                     eprintln!("Error sending data to Worker: {}", e);
                 }
             }
-            time::sleep(Duration::from_secs(5)).await; // Adjust the delay as needed
+            std::thread::sleep(Duration::from_secs(5)); // Adjust the delay as needed
         }
     });
 
     Ok(())
 }
-

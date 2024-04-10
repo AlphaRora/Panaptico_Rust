@@ -8,10 +8,15 @@ async fn main() {
 
     let mut send_data = |output: String| {
         let worker_url = worker_url.clone();
-        let result = tokio::spawn(async move {
-            worker_communication::send_data_request(&worker_url, &output).await
+        let result = tokio::task::spawn_blocking(move || {
+            tokio::runtime::Runtime::new().unwrap().block_on(async {
+                worker_communication::send_data_request(&worker_url, &output).await
+            })
         });
-        result.map(|_| ()).map_err(|_| reqwest::Error::new(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
+        match result.await.unwrap() {
+            Ok(_) => Ok(()),
+            Err(_) => Err(reqwest::Error::from(reqwest::StatusCode::INTERNAL_SERVER_ERROR)),
+        }
     };
 
     loop {
