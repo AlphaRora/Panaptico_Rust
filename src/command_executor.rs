@@ -1,48 +1,38 @@
-use std::process::{Command, Stdio};  
-use std::io::{BufReader, BufRead};  
-crate::worker_communication
-  
-pub async fn execute_bash_command(request_successful: bool, worker_url: &str) -> Result<(), Box<dyn std::error::Error>> {  
-    if !request_successful {  
-        println!("Request to Cloudflare Worker failed. Skipping command execution.");  
-        return Ok(());  
-    } else {  
-        println!("Request to Cloudflare Worker was successful. Printing something else.");  
-    }  
-  
-    let command = r#"  
-        interval=5;  
-        process_name="tritonserver --model-repository=/mnt/models";  
-        pid=$(pgrep -f "$process_name");  
-        if [[ -z "$pid" ]]; then  
-            echo "Error: Inference process not found. Please provide the correct process name.";  
-            exit 1;  
-        fi;  
-        echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";  
-        echo "---------------------------------------------------------";  
-        while true; do  
-            iostat -d -x 1 $interval | tail -n +3;  
-            pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';  
-            echo "---------------------------------------------------------";  
-        done  
-    "#;  
-  
-    let mut child = Command::new("bash")  
-        .arg("-c")  
-        .arg(command)  
-        .stdout(Stdio::piped())  
-        .spawn()  
-        .expect("Failed to spawn child process");  
-  
-    let reader = BufReader::new(child.stdout.take().unwrap());  
-  
-    for line in reader.lines() {  
-        let line = line?;  
-        println!("{}", line);  
-  
-        // Send each line of output to the worker  
-        let _ = worker_communication::send_data_request(worker_url, &line).await?;  
-    }  
-  
-    Ok(())  
-}  
+// command_executor.rs
+use std::process::{Command, Stdio};
+use std::sync::mpsc::Sender;
+use std::io::{BufRead, BufReader};
+
+pub fn execute_bash_command(tx: Sender<String>) {
+    let command = r#"
+        interval=5;
+        process_name="tritonserver --model-repository=/mnt/models";
+        pid=$(pgrep -f "$process_name");
+        if [[ -z "$pid" ]]; then
+            echo "Error: Inference process not found. Please provide the correct process name.";
+            exit 1;
+        fi;
+        echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
+        echo "---------------------------------------------------------";
+        while true; do
+            iostat -d -x 1 $interval | tail -n +3;
+            pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
+            echo "---------------------------------------------------------";
+        done
+    "#;
+
+    let mut child = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn child process");
+
+    let stdout = child.stdout.take().expect("Failed to get child stdout");
+    let stdout_reader = BufReader::new(stdout);
+
+    for line in stdout_reader.lines() {
+        let output = line.expect("Failed to read line from child stdout");
+        tx.send(output).expect("Failed to send command output");
+    }
+}
