@@ -15,3 +15,4 @@ copyright = "2023 Adoba"
 [dependencies]
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-tungstenite = "0.17.2"
+reqwest = { version = "0.11", features = ["json"] }
