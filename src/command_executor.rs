@@ -28,11 +28,11 @@ pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io:
         done  
     "#;  
 
-    let mut child = Command::new("bash")
-    .arg("-c")
-    .arg(command)
-    .spawn()
-    .expect("Failed to spawn child process");
+    // let mut child = Command::new("bash")
+    // .arg("-c")
+    // .arg(command)
+    // .spawn()
+    // .expect("Failed to spawn child process");
   
     let output = Command::new("bash").arg("-c").arg(command).output()?;    
     let output_str = String::from_utf8_lossy(&output.stdout).into_owned();    
