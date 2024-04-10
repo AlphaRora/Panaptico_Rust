@@ -1,10 +1,7 @@
-use std::process::{Command, Stdio};
-use std::io::{BufReader, BufRead};
-
-pub fn execute_bash_command(request_successful: bool) -> String {
+pub fn execute_bash_command(request_successful: bool) {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return String::new();
+        return;
     }
 
     println!("Request to Cloudflare Worker was successful. Printing something else.");
@@ -29,20 +26,9 @@ pub fn execute_bash_command(request_successful: bool) -> String {
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to spawn child process");
 
-    let stdout = child.stdout.as_mut().unwrap();
-    let reader = BufReader::new(stdout);
-
-    let mut output = String::new();
-    reader.lines().for_each(|line| {
-        if let Ok(line) = line {
-            output.push_str(&line);
-            output.push('\n');
-        }
-    });
-
-    output
+    // Handle the child process output if needed
+    // ...
 }
