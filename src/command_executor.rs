@@ -1,37 +1,23 @@
-use std::process::{Command, Stdio, Output};
+// src/command_executor.rs
+use std::process::{Command, Stdio};
 
 pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Request to Cloudflare Worker failed")); 
-    } 
+        return Ok(String::from("Request to Cloudflare Worker failed. Skipping command execution."));
+    } else {
+        println!("Request to Cloudflare Worker was successful. Printing something else.");
+    }
 
-    println!("Request to Cloudflare Worker was successful.");
+    let command = r#"interval=5;process_name="tritonserver --model-repository=/mnt/models";pid=$(pgrep -f "$process_name");if [[ -z "$pid" ]]; thenecho "Error: Inference process not found. Please provide the correct process name.";exit 1;fi;echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";echo "---------------------------------------------------------";while true; doiostat -d -x 1 $interval | tail -n +3;pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';echo "---------------------------------------------------------";done"#;
 
-    let command = r#"
-        interval=5;
-        process_name="tritonserver --model-repository=/mnt/models";
-        pid=$(pgrep -f "$process_name");
-        if [[ -z "$pid" ]]; then
-            echo "Error: Inference process not found. Please provide the correct process name.";
-            exit 1;
-        fi;
-        echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
-        echo "---------------------------------------------------------";
-        while true; do
-            iostat -d -x 1 $interval | tail -n +3;
-            pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
-            echo "---------------------------------------------------------";
-        done
-    "#;
-
-    let output: Output = Command::new("bash")
+    let output = Command::new("bash")
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
-        .output()?;
+        .spawn()?
+        .wait_with_output()?
+        .stdout;
 
-    let command_output = String::from_utf8_lossy(&output.stdout).to_string();
-
-    Ok(command_output)
+    Ok(String::from_utf8_lossy(&output).to_string())
 }
