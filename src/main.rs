@@ -25,6 +25,12 @@ async fn main() {
             }
         };
 
+        // Print the desired output in the VM
+        println!("Request to Cloudflare Worker was successful. Printing something else.");
+        println!("Monitoring wait time for processes targets: tritonserver --model-repository=/mnt/models (PID: 421650 1057344 1339315 1511142 1814944 1818258 1826503 2141245 2324574 2362028 2370337 2716471 3113947 3791815 3820143)");
+        println!("---------------------------------------------------------");
+        println!("{}", command_output);
+
         // Send data to the Worker
         let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
             Ok(response) => response,
