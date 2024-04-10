@@ -1,7 +1,9 @@
 // src/command_executor.rs
-use std::process::Command;
+// use std::process::Command;
+use std::process::{Command, Stdio, Output};
 
-pub fn execute_bash_command(request_successful: bool) {
+pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io::Error> {
+
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
         return;
@@ -27,16 +29,15 @@ pub fn execute_bash_command(request_successful: bool) {
         done
     "#;
 
-    let mut child = Command::new("bash")
+    let output: Output = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .stdout(Stdio::piped()) // Capture stdout
-        .spawn()
-        .expect("Failed to spawn child process");
-
-    let output = child.wait_with_output().expect("Failed to wait for child process");
+        .stdout(Stdio::piped())
+        .output()?; // Change here to directly get output
 
     let command_output = String::from_utf8_lossy(&output.stdout).to_string();
+
+    Ok(command_output) // Return the command output
     // Handle the child process output if needed
     // ...
 }

