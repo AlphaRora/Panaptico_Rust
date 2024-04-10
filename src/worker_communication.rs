@@ -1,4 +1,5 @@
 use reqwest::Client;
+use crate::command_executor; // Add this line
 
 pub async fn send_data_request(worker_url: &str) -> Result<String, reqwest::Error> {
     let command_output = command_executor::execute_bash_command(true)?;
