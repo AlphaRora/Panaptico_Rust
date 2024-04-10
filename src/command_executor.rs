@@ -1,10 +1,11 @@
 use std::process::{Command, Output};
+use std::os::unix::process::ExitStatusExt; // Add this line
 
 pub fn execute_bash_command(request_successful: bool) -> std::io::Result<Output> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
         return Ok(Output {
-            status: std::process::ExitStatus::from_raw(0),
+            status: std::process::ExitStatus::from_raw(0), // Now this line should work
             stdout: Vec::new(),
             stderr: Vec::new(),
         });
