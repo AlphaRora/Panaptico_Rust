@@ -1,16 +1,12 @@
-// src/command_executor.rs
-// use std::process::Command;
 use std::process::{Command, Stdio, Output};
 
 pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io::Error> {
-
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return;
-    } else {
-        println!("Request to Cloudflare Worker was successful. Printing something else.");
-    }
-    
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Request to Cloudflare Worker failed")); 
+    } 
+
+    println!("Request to Cloudflare Worker was successful.");
 
     let command = r#"
         interval=5;
@@ -33,11 +29,9 @@ pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io:
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
-        .output()?; // Change here to directly get output
+        .output()?;
 
     let command_output = String::from_utf8_lossy(&output.stdout).to_string();
 
-    Ok(command_output) // Return the command output
-    // Handle the child process output if needed
-    // ...
+    Ok(command_output)
 }
