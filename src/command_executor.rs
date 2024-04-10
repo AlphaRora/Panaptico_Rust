@@ -1,17 +1,15 @@
-use std::process::{Command, Output};
-use std::os::unix::process::ExitStatusExt; // Add this line
+// src/command_executor.rs
+use std::process::Command;
 
-pub fn execute_bash_command(request_successful: bool) -> std::io::Result<Output> {
+pub fn execute_bash_command(request_successful: bool) {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return Ok(Output {
-            status: std::process::ExitStatus::from_raw(0), // Now this line should work
-            stdout: Vec::new(),
-            stderr: Vec::new(),
-        });
+        return;
+    } else {
+        println!("Request to Cloudflare Worker was successful. Printing something else.");
     }
+    
 
-    println!("Request to Cloudflare Worker was successful. Printing something else.");
     let command = r#"
         interval=5;
         process_name="tritonserver --model-repository=/mnt/models";
@@ -29,10 +27,12 @@ pub fn execute_bash_command(request_successful: bool) -> std::io::Result<Output>
         done
     "#;
 
-    let output = Command::new("bash")
+    let mut child = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .output()?;
+        .spawn()
+        .expect("Failed to spawn child process");
 
-    Ok(output)
+    // Handle the child process output if needed
+    // ...
 }
