@@ -1,3 +1,6 @@
+mod command_executor;
+mod worker_communication;
+
 #[tokio::main]
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";

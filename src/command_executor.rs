@@ -1,4 +1,5 @@
 // src/command_executor.rs
+use std::process::Command;
 use std::process::{Command, Stdio};
 
 pub fn execute_bash_command(request_successful: bool) -> Result<String, String> {
