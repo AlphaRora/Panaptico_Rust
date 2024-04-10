@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio};  
 use std::io::{BufReader, BufRead};  
-use worker_communication;  
+crate::worker_communication
   
 pub async fn execute_bash_command(request_successful: bool, worker_url: &str) -> Result<(), Box<dyn std::error::Error>> {  
     if !request_successful {  
