@@ -1,7 +1,12 @@
 // src/command_executor.rs
 use std::process::Command;
 
-pub fn execute_bash_command() {
+pub fn execute_bash_command(request_successful: bool) {
+    if !request_successful {
+        println!("Request to Cloudflare Worker failed. Skipping command execution.");
+        return;
+    }
+
     let command = r#"
         interval=5;
         process_name="tritonserver --model-repository=/mnt/models";
