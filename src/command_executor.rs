@@ -1,14 +1,13 @@
 // src/command_executor.rs
 use std::process::Command;
 
-pub fn execute_bash_command(request_successful: bool) {
+pub fn execute_bash_command(request_successful: bool) -> Result<String, std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return;
+        return Ok(String::new());
     } else {
-        println!("Request to Cloudflare Worker was successful. Printing something else.");
+        println!("Request to Cloudflare Worker was successful. Executing command.");
     }
-    
 
     let command = r#"
         interval=5;
@@ -20,19 +19,16 @@ pub fn execute_bash_command(request_successful: bool) {
         fi;
         echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
         echo "---------------------------------------------------------";
-        while true; do
-            iostat -d -x 1 $interval | tail -n +3;
-            pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
-            echo "---------------------------------------------------------";
-        done
+        iostat -d -x 1 $interval | tail -n +3;
+        pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
+        echo "---------------------------------------------------------";
     "#;
 
-    let mut child = Command::new("bash")
+    let output = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .spawn()
-        .expect("Failed to spawn child process");
+        .output()?;
 
-    // Handle the child process output if needed
-    // ...
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    Ok(stdout)
 }
