@@ -4,13 +4,14 @@ mod worker_communication;
 
 #[tokio::main]
 async fn main() {
-    let worker_url = "https://serverworker.adoba.workers.dev/";
+    let worker_url = "https://serverworker.adoba.workers.dev/".to_string();
 
     let mut send_data = |output: String| {
-        let worker_url = worker_url.to_string();
-        async move {
+        let worker_url = worker_url.clone();
+        let result = tokio::spawn(async move {
             worker_communication::send_data_request(&worker_url, &output).await
-        }
+        });
+        result.map(|_| ()).map_err(|_| reqwest::Error::new(reqwest::StatusCode::INTERNAL_SERVER_ERROR))
     };
 
     loop {

@@ -1,8 +1,8 @@
 // src/command_executor.rs
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use std::thread;
 use std::time::Duration;
+use tokio::time;
 
 pub fn execute_bash_command(
     request_successful: bool,
@@ -41,16 +41,17 @@ pub fn execute_bash_command(
     let stdout = child.stdout.take().unwrap();
     let stdout_reader = BufReader::new(stdout);
 
-    thread::spawn(move || {
+    tokio::spawn(async move {
         for line in stdout_reader.lines() {
             if let Ok(output) = line {
                 if let Err(e) = send_data(output) {
                     eprintln!("Error sending data to Worker: {}", e);
                 }
             }
-            thread::sleep(Duration::from_secs(5)); // Adjust the delay as needed
+            time::sleep(Duration::from_secs(5)).await; // Adjust the delay as needed
         }
     });
 
     Ok(())
 }
+
