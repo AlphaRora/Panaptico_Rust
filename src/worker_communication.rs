@@ -1,14 +1,11 @@
 use reqwest::Client;
-use crate::command_executor; // Add this line
 
-pub async fn send_data_request(worker_url: &str) -> Result<String, reqwest::Error> {
-    let command_output = command_executor::execute_bash_command(true)?;
-
+pub async fn send_data_request(worker_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let response = client
         .post(worker_url)
         .header("Content-Type", "text/plain")
-        .body(command_output)
+        .body(data.to_owned())
         .send()
         .await?
         .text()

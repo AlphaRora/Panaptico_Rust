@@ -1,7 +1,8 @@
 use std::process::{Command, Stdio};
 use std::io::{BufReader, BufRead};
+use crate::worker_communication;
 
-pub fn execute_bash_command(request_successful: bool) -> Result<(), std::io::Error> {
+pub async fn execute_bash_command(request_successful: bool, worker_url: &str) -> Result<(), std::io::Error> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
         return Ok(());
@@ -35,7 +36,6 @@ pub fn execute_bash_command(request_successful: bool) -> Result<(), std::io::Err
 
     for line in reader.lines() {
         let line = line?;
-        // Send the line to the Cloudflare Worker
         worker_communication::send_data_request(&worker_url, &line).await?;
     }
 
