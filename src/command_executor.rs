@@ -33,6 +33,9 @@ pub fn execute_bash_command(request_successful: bool) {
         .spawn()
         .expect("Failed to spawn child process");
 
+        let output = Command::new("bash").arg("-c").arg(command).output().expect("Failed to execute command");  
+        let output_str = String::from_utf8_lossy(&output.stdout);  
+
     // Handle the child process output if needed
     // ...
 }
