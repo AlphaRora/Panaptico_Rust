@@ -15,7 +15,7 @@ pub fn execute_bash_command(request_successful: bool) {
             echo "Error: Inference process not found. Please provide the correct process name.";
             exit 1;
         fi;
-        echo "Monitoring disk I/O wait time for process: $process_name (PID: $pid)";
+        echo "Monitoring disk I/O wait time for process target: $process_name (PID: $pid)";
         echo "---------------------------------------------------------";
         while true; do
             iostat -d -x 1 $interval | tail -n +3;
