@@ -1,13 +1,14 @@
 // src/command_executor.rs
-use std::process::{Command, Stdio};
+use std::process::Command;
 
-pub fn execute_bash_command(request_successful: bool) -> Result<String, String> {
+pub fn execute_bash_command(request_successful: bool) {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return Ok(String::new());
+        return;
     } else {
-        println!("Request to Cloudflare Worker was successful. Executing command.");
+        println!("Request to Cloudflare Worker was successful. Printing something else.");
     }
+    
 
     let command = r#"
         interval=5;
@@ -26,16 +27,16 @@ pub fn execute_bash_command(request_successful: bool) -> Result<String, String> 
         done
     "#;
 
-    let output = Command::new("bash")
+    let mut child = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .stdout(Stdio::piped())
+        .stdout(Stdio::piped()) // Capture stdout
         .spawn()
-        .and_then(|child| child.wait_with_output())
-        .map_err(|e| format!("Failed to execute command: {}", e))?;
+        .expect("Failed to spawn child process");
 
-    let output_string = String::from_utf8(output.stdout)
-        .map_err(|e| format!("Failed to convert output to string: {}", e))?;
+    let output = child.wait_with_output().expect("Failed to wait for child process");
 
-    Ok(output_string)
+    let command_output = String::from_utf8_lossy(&output.stdout).to_string();
+    // Handle the child process output if needed
+    // ...
 }
