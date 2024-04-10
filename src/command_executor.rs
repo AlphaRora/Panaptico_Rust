@@ -1,10 +1,13 @@
-// command_executor.rs
-use std::process::Command;
+use std::process::{Command, Output};
 
-pub fn execute_bash_command(request_successful: bool) -> std::io::Result<std::process::Output> {
+pub fn execute_bash_command(request_successful: bool) -> std::io::Result<Output> {
     if !request_successful {
         println!("Request to Cloudflare Worker failed. Skipping command execution.");
-        return Ok(std::process::Output::default());
+        return Ok(Output {
+            status: std::process::ExitStatus::from_raw(0),
+            stdout: Vec::new(),
+            stderr: Vec::new(),
+        });
     }
 
     println!("Request to Cloudflare Worker was successful. Printing something else.");
