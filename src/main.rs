@@ -7,7 +7,7 @@ use tokio;
 
 #[tokio::main]
 async fn main() {
-    let worker_url = "https://serverworker.adoba.workers.dev/";
+    let worker_url = "https://newserverworker.adoba.workers.dev/";
     let (tx, rx) = mpsc::channel();
     let (lscpu_tx, lscpu_rx) = mpsc::channel();
 
