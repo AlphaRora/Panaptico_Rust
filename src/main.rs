@@ -15,17 +15,25 @@ async fn main() {
 
     // Spawn a separate thread to execute the tritonserver command
     let bash_handle = thread::spawn(move || {
-        command_executor::execute_bash_command(bash_tx);
+        if let Err(err) = command_executor::execute_bash_command(bash_tx) {
+            eprintln!("Error executing bash command: {:?}", err);
+        }
     });
 
     // Spawn another thread to execute the glances command
     let glances_handle = thread::spawn(move || {
-        command_executor::execute_glances_command(glances_tx);
+        if let Err(err) = command_executor::execute_glances_command(glances_tx) {
+            eprintln!("Error executing glances command: {:?}", err);
+        }
     });
 
     // Join both threads
-    bash_handle.join().expect("Failed to join bash thread");
-    glances_handle.join().expect("Failed to join glances thread");
+    if let Err(err) = bash_handle.join() {
+        eprintln!("Error joining bash thread: {:?}", err);
+    }
+    if let Err(err) = glances_handle.join() {
+        eprintln!("Error joining glances thread: {:?}", err);
+    }
 
     // Receive and handle output from the tritonserver command
     for command_output in bash_rx {
