@@ -1,9 +1,11 @@
 // command_executor.rs
+
 use std::process::{Command, Stdio};
 use std::sync::mpsc::Sender;
 use std::io::{BufRead, BufReader};
+use std::error::Error;
 
-pub fn execute_bash_command(tx: Sender<String>) {
+pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     let command = r#"
     interval=5;
     process_name="tritonserver --model-repository=/mnt/models";
@@ -24,36 +26,35 @@ pub fn execute_bash_command(tx: Sender<String>) {
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn child process");
+        .spawn()?;
 
-    let stdout = child.stdout.take().expect("Failed to get child stdout");
-
+    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
     let stdout_reader = BufReader::new(stdout);
 
     for line in stdout_reader.lines() {
-        let output = line.expect("Failed to read line from child stdout");
-        tx.send(output).expect("Failed to send command output");
+        let output = line?;
+        tx.send(output)?;
     }
+
+    Ok(())
 }
 
-pub fn execute_glances_command(tx: Sender<String>) {
+pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     let command = r#"timeout 5s sudo glances --export csv | tail -n +3"#;
 
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn child process");
+        .spawn()?;
 
-    let stdout = child.stdout.take().expect("Failed to get child stdout");
-
+    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
     let stdout_reader = BufReader::new(stdout);
 
     for line in stdout_reader.lines() {
-        let output = line.expect("Failed to read line from child stdout");
-        tx.send(output).expect("Failed to send command output");
+        let output = line?;
+        tx.send(output)?;
     }
-}
 
+    Ok(())
+}
