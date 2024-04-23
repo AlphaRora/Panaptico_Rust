@@ -15,7 +15,7 @@ async fn main() {
         command_executor::execute_bash_command(tx, lscpu_tx);
     });
 
-    thread::spawn(move || {
+    tokio::spawn(async move {
         async_loop(rx, &worker_url).await;
     });
 
