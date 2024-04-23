@@ -1,10 +1,9 @@
 // command_executor.rs
 use std::process::{Command, Stdio};
-use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::{Sender, Receiver};
 use std::io::{BufRead, BufReader};
-use std::thread;
 
-fn execute_bash_command(tx: Sender<String>, lscpu_tx: Sender<String>, rx: Receiver<bool>) {
+pub fn execute_bash_command(tx: Sender<String>, lscpu_tx: Sender<String>, rx: Receiver<bool>) {
     let mut lscpu_child = Command::new("lscpu")
         .stdout(Stdio::piped())
         .spawn()
@@ -35,19 +34,24 @@ fn execute_bash_command(tx: Sender<String>, lscpu_tx: Sender<String>, rx: Receiv
     }
 }
 
+// main.rs
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
+
 fn main() {
     let (tx, rx) = channel();
     let (lscpu_tx, lscpu_rx) = channel();
+    let (stop_tx, stop_rx) = channel();
 
     let handle = thread::spawn(move || {
-        execute_bash_command(tx, lscpu_tx, rx);
+        execute_bash_command(tx, lscpu_tx, stop_rx);
     });
 
     // Keep the receiver active until you're done processing the data
     // ...
 
     // Drop the receiver to signal the sender to stop
-    drop(lscpu_rx);
+    drop(stop_tx);
 
     handle.join().unwrap();
 }
