@@ -47,7 +47,7 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing glances command...");
 
-    let command = r#"timeout 5s sudo glances --export csv | tail -n +3"#;
+    let command = r#"timeout 15s sudo glances --export csv | tail -n +3"#;
 
     let mut child = Command::new("bash")
         .arg("-c")
