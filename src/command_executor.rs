@@ -6,6 +6,8 @@ use std::io::{BufRead, BufReader};
 use std::error::Error;
 
 pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing bash command...");
+
     let command = r#"
     interval=5;
     process_name="tritonserver --model-repository=/mnt/models";
@@ -27,12 +29,15 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
         .arg(command)
         .stdout(Stdio::piped())
         .spawn()?;
+    
+    println!("Bash command spawned successfully.");
 
     let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
     let stdout_reader = BufReader::new(stdout);
 
     for line in stdout_reader.lines() {
         let output = line?;
+        println!("Output from bash command: {}", output);
         tx.send(output)?;
     }
 
@@ -40,6 +45,8 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing glances command...");
+
     let command = r#"timeout 5s sudo glances --export csv | tail -n +3"#;
 
     let mut child = Command::new("bash")
@@ -47,12 +54,15 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
         .arg(command)
         .stdout(Stdio::piped())
         .spawn()?;
+    
+    println!("Glances command spawned successfully.");
 
     let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
     let stdout_reader = BufReader::new(stdout);
 
     for line in stdout_reader.lines() {
         let output = line?;
+        println!("Output from glances command: {}", output);
         tx.send(output)?;
     }
 
