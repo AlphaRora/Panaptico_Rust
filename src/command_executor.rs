@@ -38,7 +38,7 @@ pub fn execute_bash_command(tx: Sender<String>) {
 }
 
 pub fn execute_glances_command(tx: Sender<String>) {
-    let command = "sudo glances";
+    let command = r#"timeout 5s sudo glances --export csv | tail -n +3"#;
 
     let mut child = Command::new("bash")
         .arg("-c")
@@ -56,3 +56,4 @@ pub fn execute_glances_command(tx: Sender<String>) {
         tx.send(output).expect("Failed to send command output");
     }
 }
+
