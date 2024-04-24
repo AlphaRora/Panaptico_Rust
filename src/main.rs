@@ -5,6 +5,7 @@ use std::sync::mpsc;
 use std::thread;
 
 #[tokio::main]
+#[tokio::main]
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";
 
@@ -26,13 +27,9 @@ async fn main() {
         }
     });
 
-    // Join both threads
-    if let Err(err) = bash_handle.join() {
-        eprintln!("Error joining bash thread: {:?}", err);
-    }
-    if let Err(err) = glances_handle.join() {
-        eprintln!("Error joining glances thread: {:?}", err);
-    }
+    // Wait for the threads to complete
+    bash_handle.join().unwrap();
+    glances_handle.join().unwrap();
 
     // Receive and handle output from the tritonserver command
     for command_output in bash_rx {
@@ -45,7 +42,6 @@ async fn main() {
         if !command_output.trim().is_empty() {
             println!("Output from sudo glances command:");
             println!("{}", command_output);
-    
             // Send data to the Worker
             let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
                 Ok(response) => response,
@@ -54,7 +50,6 @@ async fn main() {
                     continue;
                 }
             };
-    
             // Check the response from the Worker
             if response == "execute_glances_command" {
                 println!("Received execute_glances_command response from Worker");
