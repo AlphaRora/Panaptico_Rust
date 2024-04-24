@@ -31,31 +31,43 @@ async fn main() {
     // glances_handle.join().unwrap();
 
     // Receive and handle output from the tritonserver command
-    for command_output in bash_rx {
-        println!("Request to Cloudflare Worker was successful. Printing something else.");
-        println!("{}", command_output);
-    }
-
-    // Receive and handle output from the glances command
-    for command_output in glances_rx {
-        println!("Received output from glances command: {}", command_output);
-        if !command_output.trim().is_empty() {
-            println!("Output from sudo glances command:");
+// Receive and handle output from the tritonserver command
+loop {
+    match bash_rx.recv() {
+        Ok(command_output) => {
+            println!("Request to Cloudflare Worker was successful. Printing something else.");
             println!("{}", command_output);
-            // Send data to the Worker
-            let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
-                Ok(response) => response,
-                Err(e) => {
-                    println!("Error: {}", e);
-                    continue;
+            // Send data to the Worker (if needed)
+            // ...
+        }
+        Err(_) => break, // Exit the loop if the receiver is closed
+    }
+}
+
+// Receive and handle output from the glances command
+loop {
+    match glances_rx.recv() {
+        Ok(command_output) => {
+            if !command_output.trim().is_empty() {
+                println!("Output from sudo glances command:");
+                println!("{}", command_output);
+                // Send data to the Worker
+                let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+                    Ok(response) => response,
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        continue;
+                    }
+                };
+                // Check the response from the Worker
+                if response == "execute_glances_command" {
+                    println!("Received execute_glances_command response from Worker");
+                } else {
+                    println!("Received unknown response from Worker");
                 }
-            };
-            // Check the response from the Worker
-            if response == "execute_glances_command" {
-                println!("Received execute_glances_command response from Worker");
-            } else {
-                println!("Received unknown response from Worker");
             }
         }
+        Err(_) => break, // Exit the loop if the receiver is closed
     }
+}
 }
