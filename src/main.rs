@@ -45,7 +45,7 @@ async fn main() {
         if response == "execute_glances_command" {
             println!("Received execute_glances_command response from Worker");
         } else {
-            println!("Received unknown response from Worker");
+            println!("Received unknown response from Worker, issue is with glances", response);
         }
     }
 
