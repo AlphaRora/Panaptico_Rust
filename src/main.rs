@@ -1,8 +1,11 @@
 // main.rs
 mod command_executor;
 mod worker_communication;
-use std::sync::mpsc;
+use std::sync::mpsc::Sender;
 use std::thread;
+use std::process::{Command, Stdio};
+use std::io::{BufRead, BufReader};
+use std::error::Error;
 
 #[tokio::main]
 async fn main() {
@@ -80,10 +83,14 @@ async fn main() {
         let mut child = Command::new("bash")
             .arg("-c")
             .arg(command)
+            .stdout(Stdio::piped())
             .spawn()?;
     
-        child.wait()?;
-        println!("Glances command completed.");
+        let stdout = child.wait_with_output()?;
+    
+        if !stdout.status.success() {
+            return Err(format!("Failed to execute glances command: {}", String::from_utf8_lossy(&stdout.stderr)).into());
+        }
     
         let csv_file = std::fs::read_to_string("/tmp/glances.csv")?;
         tx.send(csv_file)?;
