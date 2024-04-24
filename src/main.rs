@@ -43,16 +43,16 @@ async fn main() {
     }
 
     // Spawn another thread to execute the glances command
-    let glances_handle = thread::spawn(move || {
-        if let Err(err) = command_executor::execute_glances_command(glances_tx) {
-            eprintln!("Error executing glances command: {:?}", err);
-        }
-    });
+    // let glances_handle = thread::spawn(move || {
+    //     if let Err(err) = command_executor::execute_glances_command(glances_tx) {
+    //         eprintln!("Error executing glances command: {:?}", err);
+    //     }
+    // });
 
-    // Wait for the glances thread to complete
-    if let Err(err) = glances_handle.join() {
-        eprintln!("Error joining glances thread: {:?}", err);
-    }
+    // // Wait for the glances thread to complete
+    // if let Err(err) = glances_handle.join() {
+    //     eprintln!("Error joining glances thread: {:?}", err);
+    // }
 
     // Process the output from the glances command
 // Process the output from the glances command
