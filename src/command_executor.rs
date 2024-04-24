@@ -47,24 +47,21 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing glances command...");
 
-    let command = r#"timeout 15s sudo glances --export csv | tail -n +3"#;
+    let command = r#"sudo glances --export csv | tail -n +3"#;
 
-    let mut child = Command::new("bash")
+    let output = Command::new("bash")
         .arg("-c")
         .arg(command)
-        .stdout(Stdio::piped())
-        .spawn()?;
+        .output()?;
     
-    println!("Glances command spawned successfully.");
-
-    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-    let stdout_reader = BufReader::new(stdout);
-
-    for line in stdout_reader.lines() {
-        let output = line?;
-        println!("Output from glances command: {}", output);
-        tx.send(output)?;
+    if output.status.success() {
+        let stdout = String::from_utf8(output.stdout)?;
+        println!("Output from glances command: {}", stdout);
+        tx.send(stdout)?;
+    } else {
+        eprintln!("Error executing glances command: {}", String::from_utf8_lossy(&output.stderr));
     }
 
     Ok(())
 }
+
