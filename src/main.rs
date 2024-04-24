@@ -24,6 +24,8 @@ async fn main() {
     let glances_handle = thread::spawn(move || {
         if let Err(err) = command_executor::execute_glances_command(glances_tx) {
             eprintln!("Error executing glances command: {:?}", err);
+        } else {
+            eprintln!("good job")
         }
     });
 
@@ -43,10 +45,10 @@ async fn main() {
             }
         };
         // Check the response from the Worker
-        if response == "execute_glances_command" {
-            println!("Received execute_glances_command response from Worker");
+        if response == "execute_bash_command" {
+            println!("Received execute_bash_command response from Worker");
         } else {
-            println!("Received unknown response from Worker, issue is with glances: {}", response);
+            println!("Received unknown response from Worker, issue is with bash: {}", response);
         }
     }
     
