@@ -31,14 +31,10 @@ async fn main() {
             Ok(output) => {
                 println!("Received output from bash command: {}", output);
                 // Send data to the Worker
-                let response = match worker_communication::send_data_request(&worker_url, &output).await {
-                    Ok(response) => response,
-                    Err(e) => {
-                        println!("Error: {}", e);
-                        continue;
-                    }
-                };
-                println!("Worker response: {}", response);
+                if let Err(e) = worker_communication::send_data_request(&worker_url, &output).await {
+                    println!("Error: {}", e);
+                    continue;
+                }
             }
             Err(e) => {
                 eprintln!("Error receiving output from bash command: {}", e);
@@ -59,19 +55,15 @@ async fn main() {
     }
 
     // Process the output from the glances command
-    for command_output in glances_rx {
-        println!("Output from sudo glances command:");
-        println!("{}", command_output);
-    
-        // Send data to the Worker
-        let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
-            Ok(response) => response,
-            Err(e) => {
-                println!("Error: {}", e);
-                continue;
-            }
-        };
-    
-        println!("Worker response: {}", response);
+// Process the output from the glances command
+for command_output in glances_rx.iter() {
+    println!("Output from sudo glances command:");
+    println!("{}", command_output);
+
+    // Send data to the Worker
+    if let Err(e) = worker_communication::send_data_request(&worker_url, command_output).await {
+        println!("Error: {}", e);
+        continue;
     }
+}
 }
