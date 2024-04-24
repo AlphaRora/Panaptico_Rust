@@ -58,7 +58,7 @@ async fn main() {
             println!("Output from sudo glances command:");
             println!("{}", command_output);
             // Send data to the Worker
-            let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+            let response = match worker_communication::send_data_request(&glances_url, &command_output).await {
                 Ok(response) => response,
                 Err(e) => {
                     println!("Error: {}", e);
