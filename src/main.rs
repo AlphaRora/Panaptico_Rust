@@ -74,22 +74,20 @@ async fn main() {
     //     }
     // }
 
-    for command_output in glances_rx {
-        println!("Received output from glances command");
-        println!("Output from sudo glances command:\n{}", command_output);
-        // Send data to the Worker
-        let response = match worker_communication::send_data_request(&glances_url, &command_output).await {
-            Ok(response) => response,
-            Err(e) => {
-                println!("Error: {}", e);
-                continue;
-            }
-        };
-        // Check the response from the Worker
-        if response == "execute_glances_command" {
-            println!("Received execute_glances_command response from Worker");
-        } else {
-            println!("Received unknown response from Worker");
-        }
+    pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+        println!("Executing glances command...");
+        let command = r#"sudo glances --export csv --export-csv-file=/tmp/glances.csv"#;
+        let mut child = Command::new("bash")
+            .arg("-c")
+            .arg(command)
+            .spawn()?;
+    
+        child.wait()?;
+        println!("Glances command completed.");
+    
+        let csv_file = std::fs::read_to_string("/tmp/glances.csv")?;
+        tx.send(csv_file)?;
+    
+        Ok(())
     }
 }
