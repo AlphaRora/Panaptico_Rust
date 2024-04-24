@@ -67,9 +67,9 @@ async fn main() {
             };
             // Check the response from the Worker
             if response == "execute_glances_command" {
-                println!("Received execute_glances_command response from Worker");
+                println!("Received execute_glances_command response from Worker glances fault");
             } else {
-                println!("Received unknown response from Worker");
+                println!("Received unknown response from Worker glances fault");
             }
         }
     }
