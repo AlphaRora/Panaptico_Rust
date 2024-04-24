@@ -31,10 +31,14 @@ async fn main() {
             Ok(output) => {
                 println!("Received output from bash command: {}", output);
                 // Send data to the Worker
-                if let Err(e) = worker_communication::send_data_request(&worker_url, &output).await {
-                    println!("Error: {}", e);
-                    continue;
-                }
+                let response = match worker_communication::send_data_request(&worker_url, &output).await {
+                    Ok(response) => response,
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        continue;
+                    }
+                };
+                println!("Worker response: {}", response);
             }
             Err(e) => {
                 eprintln!("Error receiving output from bash command: {}", e);
@@ -43,27 +47,31 @@ async fn main() {
     }
 
     // Spawn another thread to execute the glances command
-    // let glances_handle = thread::spawn(move || {
-    //     if let Err(err) = command_executor::execute_glances_command(glances_tx) {
-    //         eprintln!("Error executing glances command: {:?}", err);
-    //     }
-    // });
+    let glances_handle = thread::spawn(move || {
+        if let Err(err) = command_executor::execute_glances_command(glances_tx) {
+            eprintln!("Error executing glances command: {:?}", err);
+        }
+    });
 
-    // // Wait for the glances thread to complete
-    // if let Err(err) = glances_handle.join() {
-    //     eprintln!("Error joining glances thread: {:?}", err);
-    // }
+    // Wait for the glances thread to complete
+    if let Err(err) = glances_handle.join() {
+        eprintln!("Error joining glances thread: {:?}", err);
+    }
 
     // Process the output from the glances command
-// Process the output from the glances command
-for command_output in glances_rx.iter() {
-    println!("Output from sudo glances command:");
-    println!("{}", command_output);
-
-    // Send data to the Worker
-    if let Err(e) = worker_communication::send_data_request(&worker_url, command_output).await {
-        println!("Error: {}", e);
-        continue;
+    for command_output in glances_rx {
+        println!("Output from sudo glances command:");
+        println!("{}", command_output);
+    
+        // Send data to the Worker
+        let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+            Ok(response) => response,
+            Err(e) => {
+                println!("Error: {}", e);
+                continue;
+            }
+        };
+    
+        println!("Worker response: {}", response);
     }
-}
 }
