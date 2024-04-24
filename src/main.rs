@@ -55,7 +55,7 @@ async fn main() {
 
 for command_output in glances_rx {
     println!("Received output from glances command: {}", command_output);
-    
+    if !command_output.trim().is_empty() {
         println!("Output from sudo glances command:");
         println!("{}", command_output);
         // Send data to the Glances Worker
@@ -72,7 +72,7 @@ for command_output in glances_rx {
         } else {
             println!("Received unknown response from Glances Worker: {}", response);
         }
-   
+    }
 }
 
 
