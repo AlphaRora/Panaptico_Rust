@@ -27,8 +27,8 @@ async fn main() {
     });
 
     // Wait for the threads to complete
-    bash_handle.join().unwrap();
-    glances_handle.join().unwrap();
+    // bash_handle.join().unwrap();
+    // glances_handle.join().unwrap();
 
     // Receive and handle output from the tritonserver command
     for command_output in bash_rx {
