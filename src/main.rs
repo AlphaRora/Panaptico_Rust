@@ -53,33 +53,9 @@ async fn main() {
     }
     
 
-    // Receive and handle output from the glances command
-//     for command_output in glances_rx {
-//         println!("Received output from glances command: {}", command_output);
-//         if !command_output.trim().is_empty() {
-//             println!("Output from sudo glances command:");
-//             println!("{}", command_output);
-//             // Send data to the Worker
-//             let response = match worker_communication::send_data_request(&glances_url, &command_output).await {
-//                 Ok(response) => response,
-//                 Err(e) => {
-//                     println!("Error: {}", e);
-//                     continue;
-//                 }
-//             };
-//             // Check the response from the Worker
-// // Check the response from the Worker
-// if response == "execute_glances_command" {
-//     println!("Received execute_glances_command response '{}' from Worker glances fault", response);
-// } else {
-//     println!("Received unknown response '{}' from Worker glances fault", response);
-// }
-
-//         }
-//     }
 for command_output in glances_rx {
     println!("Received output from glances command: {}", command_output);
-    if !command_output.trim().is_empty() {
+    
         println!("Output from sudo glances command:");
         println!("{}", command_output);
         // Send data to the Glances Worker
@@ -96,6 +72,9 @@ for command_output in glances_rx {
         } else {
             println!("Received unknown response from Glances Worker: {}", response);
         }
-    }
+   
 }
+
+
+
 }
