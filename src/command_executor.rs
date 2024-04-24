@@ -17,11 +17,12 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
         fi;
         echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
         echo "---------------------------------------------------------";
-        while true; do
-            iostat -d -x 1 $interval | tail -n +3;
-            pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}';
-            echo "---------------------------------------------------------";
-        done
+        while true; do 
+        echo "Iteration start"
+        iostat -d -x 1 $interval | tail -n +3; 
+        pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}'; 
+        echo "---------------------------------------------------------"; 
+    done
     "#;
 
     let mut child = Command::new("bash")
