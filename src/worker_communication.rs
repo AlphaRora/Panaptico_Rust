@@ -2,7 +2,6 @@ use reqwest::Client;
   
 pub async fn send_data_request(worker_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
-    println!("Request body: {}", data); // Add this line
     let response = client
         .post(worker_url)
         .header("Content-Type", "text/plain")
@@ -11,6 +10,7 @@ pub async fn send_data_request(worker_url: &str, data: &str) -> Result<String, r
         .await?
         .text()
         .await?;
+
     println!("Worker response: {}", response);
     Ok(response)
 }
