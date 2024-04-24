@@ -5,7 +5,6 @@ use std::sync::mpsc;
 use std::thread;
 
 #[tokio::main]
-#[tokio::main]
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";
 
