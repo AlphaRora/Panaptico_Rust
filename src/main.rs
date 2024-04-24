@@ -7,6 +7,7 @@ use std::thread;
 #[tokio::main]
 async fn main() {
     let worker_url = "https://serverworker.adoba.workers.dev/";
+    let glances_url = "https://glancesworker.adoba.workers.dev/"
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
@@ -51,25 +52,44 @@ async fn main() {
     
 
     // Receive and handle output from the glances command
+    // for command_output in glances_rx {
+    //     println!("Received output from glances command: {}", command_output);
+    //     if !command_output.trim().is_empty() {
+    //         println!("Output from sudo glances command:");
+    //         println!("{}", command_output);
+    //         // Send data to the Worker
+    //         let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
+    //             Ok(response) => response,
+    //             Err(e) => {
+    //                 println!("Error: {}", e);
+    //                 continue;
+    //             }
+    //         };
+    //         // Check the response from the Worker
+    //         if response == "execute_glances_command" {
+    //             println!("Received execute_glances_command response from Worker");
+    //         } else {
+    //             println!("Received unknown response from Worker");
+    //         }
+    //     }
+    // }
+
     for command_output in glances_rx {
-        println!("Received output from glances command: {}", command_output);
-        if !command_output.trim().is_empty() {
-            println!("Output from sudo glances command:");
-            println!("{}", command_output);
-            // Send data to the Worker
-            let response = match worker_communication::send_data_request(&worker_url, &command_output).await {
-                Ok(response) => response,
-                Err(e) => {
-                    println!("Error: {}", e);
-                    continue;
-                }
-            };
-            // Check the response from the Worker
-            if response == "execute_glances_command" {
-                println!("Received execute_glances_command response from Worker");
-            } else {
-                println!("Received unknown response from Worker");
+        println!("Received output from glances command");
+        println!("Output from sudo glances command:\n{}", command_output);
+        // Send data to the Worker
+        let response = match worker_communication::send_data_request(&glances_url, &command_output).await {
+            Ok(response) => response,
+            Err(e) => {
+                println!("Error: {}", e);
+                continue;
             }
+        };
+        // Check the response from the Worker
+        if response == "execute_glances_command" {
+            println!("Received execute_glances_command response from Worker");
+        } else {
+            println!("Received unknown response from Worker");
         }
     }
 }
