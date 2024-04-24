@@ -49,18 +49,18 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
 
     let command = r#"sudo glances --export csv | tail -n +3"#;
 
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(command)
-        .output()?;
+    // let output = Command::new("bash")
+    //     .arg("-c")
+    //     .arg(command)
+    //     .output()?;
     
-    if output.status.success() {
-        let stdout = String::from_utf8(output.stdout)?;
-        println!("Output from glances command: {}", stdout);
-        tx.send(stdout)?;
-    } else {
-        eprintln!("Error executing glances command: {}", String::from_utf8_lossy(&output.stderr));
-    }
+    // if output.status.success() {
+    //     let stdout = String::from_utf8(output.stdout)?;
+    //     println!("Output from glances command: {}", stdout);
+    //     tx.send(stdout)?;
+    // } else {
+    //     eprintln!("Error executing glances command: {}", String::from_utf8_lossy(&output.stderr));
+    // }
 
     Ok(())
 }
