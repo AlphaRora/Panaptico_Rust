@@ -22,6 +22,8 @@ pub async fn send_data_request(worker_url: &str, data: &str) -> Result<String, r
     if status.is_success() {
         Ok(response_text)
     } else {
-        Err(reqwest::Error::from_body(response))
+        Err(response.error_for_status_ref().unwrap_or_else(|_| {
+            reqwest::Error::new(format!("Unsuccessful response: {}", response.status()))
+        }))
     }
 }
