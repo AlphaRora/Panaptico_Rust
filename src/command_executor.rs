@@ -41,7 +41,7 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 
     for line in stdout_reader.lines() {
         let output = line?;
-        println!("Output from bash command: {}", output);
+        // println!("Output from bash command: {}", output);
         tx.send(output)?;
     }
 
@@ -61,6 +61,7 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
 
     let file = File::open("/tmp/glances.csv")?;
     let reader = BufReader::new(file);
+    println!("Glances might be working!");
 
     for line in reader.lines() {
         let output = line?;
