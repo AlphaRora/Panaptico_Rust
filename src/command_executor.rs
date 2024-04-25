@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader};
 use std::error::Error;
 use std::fs::File;
 
+
 pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing bash command...");
 
@@ -69,25 +70,46 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 //     Ok(())
 // }
 
+// pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+//     println!("Executing glances command...");
+
+//     let command = r#"sudo glances --export csv"#;
+
+//     let mut child = Command::new("bash")
+//         .arg("-c")
+//         .arg(command)
+//         .stdout(Stdio::piped())
+//         .spawn()?;
+
+//     let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
+//     let stdout_reader = BufReader::new(stdout);
+
+//     for line in stdout_reader.lines() {
+//         let output = line?;
+//         println!("Output from glances command: {}", output);
+//         tx.send(output)?;
+//     }
+
+//     Ok(())
+// }
+
 pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing glances command...");
-
-    let command = r#"sudo glances --export csv"#;
-
+    let command = r#"sudo glances --export csv --export-csv-file=/tmp/glances.csv"#;
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(command)
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-    let stdout_reader = BufReader::new(stdout);
+    let stdout = child.wait_with_output()?;
 
-    for line in stdout_reader.lines() {
-        let output = line?;
-        println!("Output from glances command: {}", output);
-        tx.send(output)?;
+    if !stdout.status.success() {
+        return Err(format!("Failed to execute glances command: {}", String::from_utf8_lossy(&stdout.stderr)).into());
     }
+
+    let csv_file = std::fs::read_to_string("/tmp/glances.csv")?;
+    tx.send(csv_file)?;
 
     Ok(())
 }
