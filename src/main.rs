@@ -17,6 +17,8 @@ async fn main() {
     let bash_handle = thread::spawn(move || {
         if let Err(err) = command_executor::execute_bash_command(bash_tx) {
             eprintln!("Error executing bash command: {:?}", err);
+        } else {
+            eprintln!("bash job")
         }
     });
 

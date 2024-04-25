@@ -41,7 +41,7 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 
     for line in stdout_reader.lines() {
         let output = line?;
-        // println!("Output from bash command: {}", output);
+        println!("Output from bash command: {}", output);
         tx.send(output)?;
     }
 
@@ -72,29 +72,3 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-// pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
-//     println!("Executing glances command...");
-
-//     let command = r#"sudo glances --export csv"#;
-
-//     let mut child = Command::new("bash")
-//         .arg("-c")
-//         .arg(command)
-//         .stdout(Stdio::piped())
-//         .spawn()?;
-
-//     let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-//     let mut stdout_reader = BufReader::new(stdout);
-
-//     let mut buffer = String::new();
-//     loop {
-//         let n = stdout_reader.read_line(&mut buffer)?;
-//         if n == 0 {
-//             break;
-//         }
-//         tx.send(buffer.clone())?;
-//         buffer.clear();
-//     }
-
-//     Ok(())
-// }
