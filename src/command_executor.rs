@@ -72,3 +72,43 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
+pub fn execute_num_procs_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing command to get the total number of processes...");
+    let command = "ps -ef | wc -l";
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .output()?
+        .stdout;
+    let num_procs = String::from_utf8_lossy(&output).trim().to_string();
+    println!("Total number of processes: {}", num_procs);
+    tx.send(num_procs)?;
+    Ok(())
+}
+
+pub fn execute_top_proc_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing command to get the process using the most CPU and memory...");
+    let command = "ps aux --no-headers --sort=-pcpu | head -n 1";
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .output()?
+        .stdout;
+    let top_proc = String::from_utf8_lossy(&output).trim().to_string();
+    println!("Top process: {}", top_proc);
+    tx.send(top_proc)?;
+    Ok(())
+}
+
+pub fn execute_proc_list_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing command to list all processes with CPU and memory utilization...");
+    let command = "ps aux --no-headers --sort=-pcpu";
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .output()?
+        .stdout;
+    let proc_list = String::from_utf8_lossy(&output).to_string();
+    tx.send(proc_list)?;
+    Ok(())
+}
