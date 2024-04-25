@@ -54,7 +54,7 @@ async fn main() {
     
 
 for command_output in glances_rx {
-    println!("Received output from glances command: {}", command_output);
+    println!("Received output from glances command");
     if !command_output.trim().is_empty() {
         println!("Output from sudo glances command:");
         println!("{}", command_output);
