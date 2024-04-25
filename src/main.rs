@@ -13,7 +13,16 @@ async fn main() {
     let (bash_tx, bash_rx) = mpsc::channel();
     let (glances_tx, glances_rx) = mpsc::channel();
 
-    // Spawn a separate thread to execute the tritonserver command
+        // Spawn a separate  thread to execute the glances command
+        let glances_handle = thread::spawn(move || {
+            if let Err(err) = command_executor::execute_glances_command(glances_tx) {
+                eprintln!("Error executing glances command: {:?}", err);
+            } else {
+                eprintln!("good job")
+            }
+        });
+
+    // Spawn a another thread to execute the tritonserver command
     let bash_handle = thread::spawn(move || {
         if let Err(err) = command_executor::execute_bash_command(bash_tx) {
             eprintln!("Error executing bash command: {:?}", err);
@@ -22,18 +31,31 @@ async fn main() {
         }
     });
 
-    // Spawn another thread to execute the glances command
-    let glances_handle = thread::spawn(move || {
-        if let Err(err) = command_executor::execute_glances_command(glances_tx) {
-            eprintln!("Error executing glances command: {:?}", err);
-        } else {
-            eprintln!("good job")
-        }
-    });
 
-    // Wait for the threads to complete
-    // bash_handle.join().unwrap();
-    // glances_handle.join().unwrap();
+
+
+    for command_output in glances_rx {
+        println!("Received output from glances command");
+        if !command_output.trim().is_empty() {
+            println!("Output from sudo glances command:");
+            println!("{}", command_output);
+            // Send data to the Glances Worker
+            let response = match worker_communication::send_glances_data_request(&glances_url, &command_output).await {
+                Ok(response) => response,
+                Err(e) => {
+                    println!("Error: {}", e);
+                    continue;
+                }
+            };
+            // Check the response from the Glances Worker
+            if response == "execute_glances_command" {
+                println!("Received execute_glances_command response from Glances Worker");
+            } else {
+                println!("Received unknown response from Glances Worker: {}", response);
+            }
+        }
+    }
+
 
     // Receive and handle output from the tritonserver command
     for command_output in bash_rx {
@@ -55,27 +77,7 @@ async fn main() {
     }
     
 
-for command_output in glances_rx {
-    println!("Received output from glances command");
-    if !command_output.trim().is_empty() {
-        println!("Output from sudo glances command:");
-        println!("{}", command_output);
-        // Send data to the Glances Worker
-        let response = match worker_communication::send_glances_data_request(&glances_url, &command_output).await {
-            Ok(response) => response,
-            Err(e) => {
-                println!("Error: {}", e);
-                continue;
-            }
-        };
-        // Check the response from the Glances Worker
-        if response == "execute_glances_command" {
-            println!("Received execute_glances_command response from Glances Worker");
-        } else {
-            println!("Received unknown response from Glances Worker: {}", response);
-        }
-    }
-}
+
 
 
 
