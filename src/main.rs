@@ -13,27 +13,33 @@ async fn main() {
     let (bash_tx, bash_rx) = mpsc::channel();
     let (glances_tx, glances_rx) = mpsc::channel();
 
-        // Spawn a separate  thread to execute the glances command
-        let glances_handle = thread::spawn(move || {
-            if let Err(err) = command_executor::execute_glances_command(glances_tx) {
-                eprintln!("Error executing glances command: {:?}", err);
-            } else {
-                eprintln!("good job")
-            }
-        });
+    // Spawn a separate thread to execute the glances command
+    let glances_handle = thread::spawn(move || {
+        if let Err(err) = command_executor::execute_glances_command(glances_tx) {
+            eprintln!("Error executing glances command: {:?}", err);
+        } else {
+            eprintln!("good job");
+        }
+    });
 
-    // Spawn a another thread to execute the tritonserver command
+    // Spawn another thread to execute the tritonserver command
     let bash_handle = thread::spawn(move || {
         if let Err(err) = command_executor::execute_bash_command(bash_tx) {
             eprintln!("Error executing bash command: {:?}", err);
         } else {
-            eprintln!("bash job")
+            eprintln!("bash job");
         }
     });
 
+    // Handle output from both commands concurrently
+    let glances_worker = handle_glances_output(glances_rx, glances_url);
+    let bash_worker = handle_bash_output(bash_rx, worker_url);
 
+    // Wait for both workers to complete
+    tokio::join!(glances_worker, bash_worker);
+}
 
-
+async fn handle_glances_output(glances_rx: mpsc::Receiver<String>, glances_url: String) {
     for command_output in glances_rx {
         println!("Received output from glances command");
         if !command_output.trim().is_empty() {
@@ -55,9 +61,9 @@ async fn main() {
             }
         }
     }
+}
 
-
-    // Receive and handle output from the tritonserver command
+async fn handle_bash_output(bash_rx: mpsc::Receiver<String>, worker_url: String) {
     for command_output in bash_rx {
         println!("Request to Cloudflare Worker was successful. Printing something else.");
         println!("{}", command_output);
@@ -75,10 +81,4 @@ async fn main() {
             println!("Received unknown response from Worker, issue is with bash: {}", response);
         }
     }
-    
-
-
-
-
-
 }
