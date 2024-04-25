@@ -70,25 +70,38 @@ pub fn execute_bash_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
 //     Ok(())
 // }
 
-pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
-    println!("Executing glances command...");
-
-    let command = r#"sudo glances --export csv"#;
-
-    let mut child = Command::new("bash")
-        .arg("-c")
-        .arg(command)
-        .stdout(Stdio::piped())
-        .spawn()?;
-
-    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-    let stdout_reader = BufReader::new(stdout);
-
-    for line in stdout_reader.lines() {
-        let output = line?;
-        println!("Output from glances command: {}", output);
-        tx.send(output)?;
-    }
-
-    Ok(())
-}
+pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {  
+    println!("Executing glances command...");  
+  
+    let command = r#"sudo glances --export csv"#;  
+  
+    let mut child = Command::new("bash")  
+        .arg("-c")  
+        .arg(command)  
+        .stdout(Stdio::piped())  
+        .spawn()?;  
+  
+    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;  
+    let stdout_reader = BufReader::new(stdout);  
+  
+    let mut line = String::new();  
+  
+    loop {  
+        match stdout_reader.read_line(&mut line) {  
+            Ok(bytes_read) => {  
+                if bytes_read == 0 {  
+                    break;  
+                }  
+                println!("Output from glances command: {}", line.trim());  
+                tx.send(line.clone())?;  
+                line.clear();  
+            },  
+            Err(err) => {  
+                eprintln!("Error reading glances command output: {:?}", err);  
+                break;  
+            }  
+        }  
+    }  
+  
+    Ok(())  
+}  
