@@ -122,7 +122,7 @@ async fn handle_bash_output(bash_rx: mpsc::Receiver<String>, worker_url: String)
     }
 }
 
-async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>) {
+async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>, numberofprocesses_url: String) {
     for output in num_procs_rx {
         println!("Total number of processes: {}", output);
         let response = match worker_communication::send_processes_count_request(&numberofprocesses_url, &command_output).await {
@@ -141,7 +141,7 @@ async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>) {
     }
 }
 
-async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>) {
+async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_url: String) {
     for output in top_proc_rx {
         println!("Top process: {}", output);
         let response = match worker_communication::send_top_process_request(&topprocess_url, &command_output).await {
@@ -160,7 +160,7 @@ async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>) {
     }
 }
 
-async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>) {
+async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>, allprocessutilization_url: String) {
     for output in proc_list_rx {
         println!("Process list:\n{}", output);
         let response = match worker_communication::send_process_utlization_request(&allprocessutilization_url, &command_output).await {

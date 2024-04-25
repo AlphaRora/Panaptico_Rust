@@ -33,7 +33,7 @@ pub async fn send_glances_data_request(glances_url: &str, data: &str) -> Result<
 pub async fn send_processes_count_request(numberofprocesses_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let response = client
-        .post(glances_url)
+        .post(numberofprocesses_url)
         .header("Content-Type", "text/plain")
         .body(data.to_owned())
         .send()
@@ -48,7 +48,7 @@ pub async fn send_processes_count_request(numberofprocesses_url: &str, data: &st
 pub async fn send_top_process_request(topprocess_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let response = client
-        .post(glances_url)
+        .post(topprocess_url)
         .header("Content-Type", "text/plain")
         .body(data.to_owned())
         .send()
@@ -63,7 +63,7 @@ pub async fn send_top_process_request(topprocess_url: &str, data: &str) -> Resul
 pub async fn send_process_utlization_request(allprocessutilization_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let response = client
-        .post(glances_url)
+        .post(allprocessutilization_url)
         .header("Content-Type", "text/plain")
         .body(data.to_owned())
         .send()
