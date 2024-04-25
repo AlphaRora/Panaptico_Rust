@@ -10,7 +10,7 @@ async fn main() {
     let glances_url = "https://glances-server.adoba.workers.dev/".to_string();
     let topprocess_url = "https://toprocessworker.adoba.workers.dev/".to_string();
     let numberofprocesses_url = "https://numberofprocessworker.adoba.workers.dev/".to_string();
-    let allprocessutilization_url = "https://google.com/".to_string();
+    let allprocessutilization_url = "https://allprocessutilizationworker.adoba.workers.dev/".to_string();
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
