@@ -25,17 +25,13 @@ async fn main() {
         if let Err(err) = command_executor::execute_glances_command(glances_tx) {
             eprintln!("Error executing glances command: {:?}", err);
         } else {
-            // Wait until all output from the glances command has been processed
-            while let Ok(output) = glances_rx.try_recv() {
-                println!("Received output from glances command: {}", output);
-                // Process the output as needed
-            }
+            eprintln!("good job")
         }
     });
 
     // Wait for the threads to complete
-    bash_handle.join().unwrap();
-    glances_handle.join().unwrap();
+    // bash_handle.join().unwrap();
+    // glances_handle.join().unwrap();
 
     // Receive and handle output from the tritonserver command
     for command_output in bash_rx {
