@@ -38,7 +38,7 @@ async fn main() {
     });
 
     let num_procs_handle = thread::spawn(move || {
-        if let Err(err) = command_executor::execute_num_procs_command(num_procs_tx) {
+        if let Err(err) = command_executor::execute_numberofprocess_command(num_procs_tx) {
             eprintln!("Error executing num_procs command: {:?}", err);
         } else {
             eprintln!("num_procs job");
