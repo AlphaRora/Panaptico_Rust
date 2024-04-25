@@ -86,7 +86,7 @@ pub fn execute_num_procs_command(tx: Sender<String>) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-pub fn execute_top_proc_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+pub fn execute_topprocess_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing command to get the process using the most CPU and memory...");
     let command = "ps aux --no-headers --sort=-pcpu | head -n 1";
     let output = Command::new("bash")

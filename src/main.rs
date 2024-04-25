@@ -46,7 +46,7 @@ async fn main() {
     });
 
     let top_proc_handle = thread::spawn(move || {
-        if let Err(err) = command_executor::execute_top_proc_command(top_proc_tx) {
+        if let Err(err) = command_executor::execute_topprocess_command(top_proc_tx) {
             eprintln!("Error executing top_proc command: {:?}", err);
         } else {
             eprintln!("top_proc job");
@@ -123,8 +123,8 @@ async fn handle_bash_output(bash_rx: mpsc::Receiver<String>, worker_url: String)
 }
 
 async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>, numberofprocesses_url: String) {
-    for output in num_procs_rx {
-        println!("Total number of processes: {}", output);
+    for command_output in num_procs_rx {
+        println!("Total number of processes: {}", command_output);
         let response = match worker_communication::send_processes_count_request(&numberofprocesses_url, &command_output).await {
             Ok(response) => response,
             Err(e) => {
@@ -142,8 +142,8 @@ async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>, numberofp
 }
 
 async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_url: String) {
-    for output in top_proc_rx {
-        println!("Top process: {}", output);
+    for command_output in top_proc_rx {
+        println!("Top process: {}", command_output);
         let response = match worker_communication::send_top_process_request(&topprocess_url, &command_output).await {
             Ok(response) => response,
             Err(e) => {
@@ -161,8 +161,8 @@ async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_
 }
 
 async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>, allprocessutilization_url: String) {
-    for output in proc_list_rx {
-        println!("Process list:\n{}", output);
+    for command_output in proc_list_rx {
+        println!("Process list:\n{}", command_output);
         let response = match worker_communication::send_process_utlization_request(&allprocessutilization_url, &command_output).await {
             Ok(response) => response,
             Err(e) => {
