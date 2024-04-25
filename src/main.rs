@@ -6,8 +6,8 @@ use std::thread;
 
 #[tokio::main]
 async fn main() {
-    let worker_url = "https://serverworker.adoba.workers.dev/";
-    let glances_url = "https://glances-server.adoba.workers.dev/";
+    let worker_url = "https://serverworker.adoba.workers.dev/".to_string();
+    let glances_url = "https://glances-server.adoba.workers.dev/".to_string();
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
