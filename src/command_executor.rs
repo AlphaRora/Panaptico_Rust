@@ -147,5 +147,5 @@ let load_list = String::from_utf8_lossy(&output).to_string();
 tx.send(load_list)?;
 Ok(())
 
-    Ok(())
+   
 }
