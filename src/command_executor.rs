@@ -138,20 +138,14 @@ do
 done
 "#;
 
-    let mut child = Command::new("bash")
-        .arg("-c")
-        .arg(command)
-        .stdout(Stdio::piped())
-        .spawn()?;
-
-    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-    let stdout_reader = BufReader::new(stdout);
-
-    for line in stdout_reader.lines() {
-        let output = line?;
-        println!("Output from network load command: {}", output);
-        tx.send(output)?;
-    }
+let output = Command::new("bash")
+.arg("-c")
+.arg(command)
+.output()?
+.stdout;
+let load_list = String::from_utf8_lossy(&output).to_string();
+tx.send(load_list)?;
+Ok(())
 
     Ok(())
 }
