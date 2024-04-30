@@ -11,7 +11,7 @@ async fn main() {
     let topprocess_url = "https://toprocessworker.adoba.workers.dev/".to_string();
     let numberofprocesses_url = "https://numberofprocessworker.adoba.workers.dev/".to_string();
     let allprocessutilization_url = "https://allprocessutilizationworker.adoba.workers.dev/".to_string();
-    let networkload_url = "https://networkloadworker.adoba.workers.dev/"
+    let networkload_url = "https://networkloadworker.adoba.workers.dev/".to_string();
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
@@ -77,7 +77,7 @@ async fn main() {
     let num_procs_worker = handle_num_procs_output(num_procs_rx, numberofprocesses_url );
     let top_proc_worker = handle_top_proc_output(top_proc_rx, topprocess_url);
     let proc_list_worker = handle_proc_list_output(proc_list_rx, allprocessutilization_url);
-    let load_list_worker = handle_util_list_output(load_list_rx, networkutilization_url);
+    let load_list_worker = handle_util_list_output(load_list_rx, networkload_url);
 
     // Wait for all workers to complete
     tokio::join!(
