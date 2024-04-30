@@ -12,6 +12,7 @@ async fn main() {
     let numberofprocesses_url = "https://numberofprocessworker.adoba.workers.dev/".to_string();
     let allprocessutilization_url = "https://allprocessutilizationworker.adoba.workers.dev/".to_string();
     let networkload_url = "https://networkloadworker.adoba.workers.dev/".to_string();
+    let networkspeed_url = "https://networkspeedworker.adoba.workers.dev/".to_string();
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
@@ -20,6 +21,7 @@ async fn main() {
     let (top_proc_tx, top_proc_rx) = mpsc::channel();
     let (proc_list_tx, proc_list_rx) = mpsc::channel();
     let (load_list_tx, load_list_rx) = mpsc::channel();
+    let (speed_list_tx, speed_list_rx) = mpsc::channel();
 
     // Spawn a separate thread to execute the glances command
     let glances_handle = thread::spawn(move || {
@@ -71,6 +73,14 @@ async fn main() {
         }
     });
 
+    let speed_handle = thread::spawn(move || {
+        if let Err(err) = command_executor::execute_network_speed_command(speed_list_tx) {
+            eprintln!("Error executing bash command: {:?}", err);
+        } else {
+            eprintln!("bash job");
+        }
+    });
+
     // Handle output from all commands concurrently
     let glances_worker = handle_glances_output(glances_rx, glances_url);
     let bash_worker = handle_bash_output(bash_rx, worker_url);
@@ -78,6 +88,7 @@ async fn main() {
     let top_proc_worker = handle_top_proc_output(top_proc_rx, topprocess_url);
     let proc_list_worker = handle_proc_list_output(proc_list_rx, allprocessutilization_url);
     let load_list_worker = handle_load_output(load_list_rx, networkload_url);
+    let speed_list_worker = handle_speed_output(speed_list_rx, networkspeed_url);
 
     // Wait for all workers to complete
     tokio::join!(
@@ -86,7 +97,8 @@ async fn main() {
         num_procs_worker,
         top_proc_worker,
         proc_list_worker,
-        load_list_worker
+        load_list_worker,
+        load_speed_worker
     );
 }
 
@@ -165,6 +177,26 @@ async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_
         };
         // Check the response from the Worker
         if response == "execute_bash_command" {
+            println!("Received execute_bash_command response from Worker");
+        } else {
+            println!("Received unknown response from Worker, issue is with bash: {}", response);
+        }
+    }
+}
+
+
+async fn handle_speed_output(speed_list_rx: mpsc::Receiver<String>, networkspeed_url: String) {
+    for command_output in speed_list_rx {
+        println!("Network Speed: {}", command_output);
+        let response = match worker_communication::send_network_speed_request(&networkspeed_url, &command_output).await {
+            Ok(response) => response,
+            Err(e) => {
+                println!("Error: {}", e);
+                continue;
+            }
+        };
+        // Check the response from the Worker
+        if response == "execute_speed_command" {
             println!("Received execute_bash_command response from Worker");
         } else {
             println!("Received unknown response from Worker, issue is with bash: {}", response);

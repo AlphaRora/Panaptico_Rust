@@ -113,6 +113,34 @@ pub fn execute_proc_list_command(tx: Sender<String>) -> Result<(), Box<dyn Error
     Ok(())
 }
 
+pub fn execute_network_speed_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing command to list network speed");
+    let command = "r#
+    #!/bin/bash
+
+# Get a list of all network devices
+devices=$(ip -o link show | awk -F': ' '{print $2}')
+
+# Loop through each device and get its speed
+for dev in $devices; do
+    speed=$(ethtool $dev 2>/dev/null | grep "Speed" | awk '{print $2}')
+    if [ -n "$speed" ]; then
+        echo "Device: $dev, Speed: $speed"
+    fi
+done
+    ";
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .output()?
+        .stdout;
+    let speed_list = String::from_utf8_lossy(&output).to_string();
+    tx.send(speed_list)?;
+    Ok(())
+}
+
+
+
 pub fn execute_network_load_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing command to get network devices and their current load...");
     let command = r#"

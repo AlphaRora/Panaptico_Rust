@@ -88,3 +88,18 @@ pub async fn send_load_request(networkload_url: &str, data: &str) -> Result<Stri
     println!("Worker response: {}", response);
     Ok(response)
 }
+
+pub async fn send_network_speed_request(networkspeed_url: &str, data: &str) -> Result<String, reqwest::Error> {
+    let client = Client::new();
+    let response = client
+        .post(networkspeed_url)
+        .header("Content-Type", "text/plain")
+        .body(data.to_owned())
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("Worker response: {}", response);
+    Ok(response)
+}
