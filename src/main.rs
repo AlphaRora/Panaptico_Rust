@@ -11,6 +11,7 @@ async fn main() {
     let topprocess_url = "https://toprocessworker.adoba.workers.dev/".to_string();
     let numberofprocesses_url = "https://numberofprocessworker.adoba.workers.dev/".to_string();
     let allprocessutilization_url = "https://allprocessutilizationworker.adoba.workers.dev/".to_string();
+    let networkload_url = "https://networkloadworker.adoba.workers.dev/"
 
     // Create channels for each command
     let (bash_tx, bash_rx) = mpsc::channel();
@@ -18,6 +19,7 @@ async fn main() {
     let (num_procs_tx, num_procs_rx) = mpsc::channel();
     let (top_proc_tx, top_proc_rx) = mpsc::channel();
     let (proc_list_tx, proc_list_rx) = mpsc::channel();
+    let (load_list_tx, load_list_rx) = mpsc::channel();
 
     // Spawn a separate thread to execute the glances command
     let glances_handle = thread::spawn(move || {
@@ -61,12 +63,21 @@ async fn main() {
         }
     });
 
+    let load_handle = thread::spawn(move || {
+        if let Err(err) = command_executor::execute_bash_command(load_list_tx) {
+            eprintln!("Error executing bash command: {:?}", err);
+        } else {
+            eprintln!("bash job");
+        }
+    });
+
     // Handle output from all commands concurrently
     let glances_worker = handle_glances_output(glances_rx, glances_url);
     let bash_worker = handle_bash_output(bash_rx, worker_url);
     let num_procs_worker = handle_num_procs_output(num_procs_rx, numberofprocesses_url );
     let top_proc_worker = handle_top_proc_output(top_proc_rx, topprocess_url);
     let proc_list_worker = handle_proc_list_output(proc_list_rx, allprocessutilization_url);
+    let load_list_worker = handle_util_list_output(load_list_rx, networkutilization_url);
 
     // Wait for all workers to complete
     tokio::join!(
@@ -74,7 +85,8 @@ async fn main() {
         bash_worker,
         num_procs_worker,
         top_proc_worker,
-        proc_list_worker
+        proc_list_worker,
+        load_list_worker
     );
 }
 
@@ -163,7 +175,7 @@ async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_
 async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>, allprocessutilization_url: String) {
     for command_output in proc_list_rx {
         println!("Process list:\n{}", command_output);
-        let response = match worker_communication::send_process_utlization_request(&allprocessutilization_url, &command_output).await {
+        let response = match worker_communication::send_network_devices_utilization_request(&allprocessutilization_url, &command_output).await {
             Ok(response) => response,
             Err(e) => {
                 println!("Error: {}", e);
@@ -178,4 +190,26 @@ async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>, allproces
         }
     }
     }
+
+    async fn handle_load_output(load_rx: mpsc::Receiver<String>, networkload_url: String) {
+        for command_output in load_rx {
+            println!("Request to Cloudflare Worker was successful. Printing something else.");
+            println!("{}", command_output);
+            let response = match worker_communication::send_load_request(&networkload_url, &command_output).await {
+                Ok(response) => response,
+                Err(e) => {
+                    println!("Error: {}", e);
+                    continue;
+                }
+            };
+            // Check the response from the Worker
+            if response == "execute_load_command" {
+                println!("Received execute_bash_command response from Worker");
+            } else {
+                println!("Received unknown response from Worker, issue is with bash: {}", response);
+            }
+        }
+    }
+
+
 

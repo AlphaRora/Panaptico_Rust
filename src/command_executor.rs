@@ -112,3 +112,46 @@ pub fn execute_proc_list_command(tx: Sender<String>) -> Result<(), Box<dyn Error
     tx.send(proc_list)?;
     Ok(())
 }
+
+pub fn execute_network_load_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+    println!("Executing command to get network devices and their current load...");
+    let command = r#"
+#!/bin/bash
+
+# Get the list of network devices
+devices=$(netstat -i | awk 'NR>2 {print $1}' | grep -v ^lo)
+
+# Iterate over each device and fetch its current load
+for device in $devices
+do
+    rx_bytes=$(cat /sys/class/net/"$device"/statistics/rx_bytes)
+    tx_bytes=$(cat /sys/class/net/"$device"/statistics/tx_bytes)
+    rx_packets=$(cat /sys/class/net/"$device"/statistics/rx_packets)
+    tx_packets=$(cat /sys/class/net/"$device"/statistics/tx_packets)
+
+    echo "----- $device -----"
+    echo "Received Bytes: $rx_bytes"
+    echo "Transmitted Bytes: $tx_bytes"
+    echo "Received Packets: $rx_packets"
+    echo "Transmitted Packets: $tx_packets"
+    echo
+done
+"#;
+
+    let mut child = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
+    let stdout_reader = BufReader::new(stdout);
+
+    for line in stdout_reader.lines() {
+        let output = line?;
+        println!("Output from network load command: {}", output);
+        tx.send(output)?;
+    }
+
+    Ok(())
+}
