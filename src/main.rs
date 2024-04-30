@@ -64,7 +64,7 @@ async fn main() {
     });
 
     let load_handle = thread::spawn(move || {
-        if let Err(err) = command_executor::execute_bash_command(load_list_tx) {
+        if let Err(err) = command_executor::execute_network_load_command(load_list_tx) {
             eprintln!("Error executing bash command: {:?}", err);
         } else {
             eprintln!("bash job");
