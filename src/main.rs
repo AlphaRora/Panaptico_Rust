@@ -77,7 +77,7 @@ async fn main() {
     let num_procs_worker = handle_num_procs_output(num_procs_rx, numberofprocesses_url );
     let top_proc_worker = handle_top_proc_output(top_proc_rx, topprocess_url);
     let proc_list_worker = handle_proc_list_output(proc_list_rx, allprocessutilization_url);
-    let load_list_worker = handle_util_list_output(load_list_rx, networkload_url);
+    let load_list_worker = handle_load_output(load_list_rx, networkload_url);
 
     // Wait for all workers to complete
     tokio::join!(
@@ -175,7 +175,7 @@ async fn handle_top_proc_output(top_proc_rx: mpsc::Receiver<String>, topprocess_
 async fn handle_proc_list_output(proc_list_rx: mpsc::Receiver<String>, allprocessutilization_url: String) {
     for command_output in proc_list_rx {
         println!("Process list:\n{}", command_output);
-        let response = match worker_communication::send_network_devices_utilization_request(&allprocessutilization_url, &command_output).await {
+        let response = match worker_communication::send_process_utlization_request(&allprocessutilization_url, &command_output).await {
             Ok(response) => response,
             Err(e) => {
                 println!("Error: {}", e);

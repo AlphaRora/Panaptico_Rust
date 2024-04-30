@@ -74,8 +74,6 @@ pub async fn send_process_utlization_request(allprocessutilization_url: &str, da
     println!("Process Utilization: {}", response);
     Ok(response)
 }
-
-
 pub async fn send_load_request(networkload_url: &str, data: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let response = client
