@@ -98,7 +98,7 @@ async fn main() {
         top_proc_worker,
         proc_list_worker,
         load_list_worker,
-        load_speed_worker
+        speed_list_worker
     );
 }
 

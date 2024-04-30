@@ -1,5 +1,4 @@
 // command_executor.rs
-use std::error::Error;
 use std::process::{Command, Stdio};
 use std::sync::mpsc::Sender;
 use std::io::{BufRead, BufReader};
