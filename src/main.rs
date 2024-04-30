@@ -145,7 +145,7 @@ async fn handle_num_procs_output(num_procs_rx: mpsc::Receiver<String>, numberofp
             }
         };
         // Check the response from the Worker
-        if response == "execute_bash_command" {
+        if response == "execute_numberofprocess_command" {
             println!("Received execute_bash_command response from Worker");
         } else {
             println!("Received unknown response from Worker, issue is with bash: {}", response);
