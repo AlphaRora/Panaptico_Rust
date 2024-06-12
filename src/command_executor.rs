@@ -72,6 +72,21 @@ pub fn execute_glances_command(tx: Sender<String>) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
+pub fn execute_command(tx: Sender<String>, commands: []?) -> Result<(), Box<dyn Error>> {
+    for command in commands {
+        let output = Command::new("bash")
+        .arg("-c")
+        .arg(command)
+        .output()?
+        .stdout;
+        let num_procs = String::from_utf8_lossy(&output).trim().to_string();
+        println!("Total number of processes: {}", num_procs);
+        tx.send(num_procs)?;
+        Ok(())
+    }
+    Ok(())
+}
+
 pub fn execute_numberofprocess_command(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
     println!("Executing command to get the total number of processes...");
     let command = "ps -ef | wc -l";

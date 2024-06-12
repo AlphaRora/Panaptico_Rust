@@ -1,0 +1,33 @@
+{
+    server: "illumio.panapatico.com",
+    uuid: "6567-hgffghf-675675",
+    version : "1234-abc",
+    cron: [
+        {
+            type: "shell",
+            comand: "kjhsakjashdjk",
+            interval: 10,
+            unit: "seconds"
+        },
+        {
+            type: "shell",
+            comand: "kjhsakjashdjk",
+            interval: 5,
+            unit: "seconds"
+        },
+        {
+            type: "shell",
+            comand: "kjhsakjashdjk",
+            interval: 5,
+            unit: "seconds"
+        },
+    ],
+    externalInput: {
+        allowed: [
+            "*"
+        ],
+        forbidden: [
+            "*"
+        ]
+    }
+}
