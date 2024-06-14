@@ -5,7 +5,6 @@ mod azure_storage_client;
 
 use actix::Actor;
 use actix_rt::System;
-use actix_web::{web, App, HttpServer};
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
 use tokio_tungstenite::accept_async;
@@ -34,7 +33,6 @@ async fn main() {
     let azure_client = Arc::new(AzureDataLakeClient::new(
         "datalakestoragepanaptico",
         "machinelogs", // replace with your actual container name
-        "9jbBeRvofUNNbsGq1PZz12Sam3Cy3YTB5eEQGNQI0aNl9Bc+rOltco2zoTt3qm8Gb8FihOHdPDwW+ASt+0vdlQ==" // replace with your actual access key
     ));
 
     let (bash_tx, bash_rx) = std::sync::mpsc::channel();

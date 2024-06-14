@@ -1,35 +1,31 @@
 // azure_storage_client.rs
-use azure_storage::prelude::*;
+use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use azure_identity::token_credentials::AzureCliCredential;
 use futures::stream::StreamExt;
 use std::sync::Arc;
 
 pub struct AzureDataLakeClient {
-    account: String,
-    container: String,
-    client: Arc<StorageClient>,
+    container_client: Arc<ContainerClient>,
 }
 
 impl AzureDataLakeClient {
-    pub fn new(account: &str, container: &str, access_key: &str) -> Self {
-        let client = StorageClient::new_access_key(account, access_key);
+    pub fn new(account: &str, container: &str) -> Self {
+        let storage_account_client = StorageAccountClient::new_account_sas_credentials(
+            account,
+            &AzureCliCredential::new().unwrap(),
+        );
+        let container_client = storage_account_client.as_container_client(container);
+
         Self {
-            account: account.to_string(),
-            container: container.to_string(),
-            client: Arc::new(client),
+            container_client: Arc::new(container_client),
         }
     }
 
-    pub async fn upload(&self, file_name: &str, data: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let container_client = self.client.as_container_client(&self.container);
-        let blob_client = container_client.as_blob_client(file_name);
-
-        let response = blob_client
-            .put_block_blob(data.as_bytes().to_vec())
-            .into_future()
-            .await?;
-
-        println!("Uploaded blob: {:#?}", response);
+    pub async fn upload(&self, file_name: &str, content: &str) -> azure_core::Result<()> {
+        let blob_client = self.container_client.as_blob_client(file_name);
+        let data = content.as_bytes();
+        blob_client.put_block_blob(data).await?;
         Ok(())
     }
 }
