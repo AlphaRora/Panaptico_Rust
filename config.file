@@ -31,3 +31,43 @@
         ]
     }
 }
+
+/***
+
+
+main() {
+    start()
+}
+
+start() {
+    read config file();
+    
+    start config actions();
+
+    connect to socket server (defined in config)()
+}
+
+actOnCommend(msg) {
+    command, args, data = processMsg(msg);
+    switch command {
+        prob from externak server => case update binary: 
+            download new binary() -> start new binary() -> stop old binary() -> delete old binary()
+        case update config:
+            writeNewConfig();
+            start();
+        case shell:
+            validate() -> rewrite config() -> start()
+        case updateMemoryPerExecutable: 
+            run command args
+        default: 
+            doNothing();
+    }
+}
+
+"type @@ `sudo | grep ` | hsdjkhdsjk "
+"updateConfig @@ `{ cron : { action: disable, commandId: "kjhaskjd897asd" }` | hsdjkhdsjk "
+
+shellProcessorr.bin
+updateMemoryPerExecutable.bin pid memoryCap
+
+***/
