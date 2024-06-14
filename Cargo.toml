@@ -17,13 +17,14 @@ regex = "1.5.4"
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-tungstenite = "0.17.2"
 reqwest = { version = "0.11", features = ["json"] }
-actix = "4"
-actix-websocket = "4"
+actix = "0.13.5"
+actix-web = "4.0.0"
 azure_storage = { version = "0.1" }
 azure_core = "0.1"
 azure_identity = "0.1"
 azure_storage_blobs = "0.1"
 futures = "0.3.18"
+
 
 
 
