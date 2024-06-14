@@ -1,10 +1,11 @@
-// main.rs
 mod websocket_actor;
 mod supervisor;
 mod command_actors;
 mod azure_storage_client;
 
-use actix::prelude::*;
+use actix::Actor;
+use actix_rt::System;
+use actix_web::{web, App, HttpServer};
 use tokio::net::TcpListener;
 use std::net::SocketAddr;
 use tokio_tungstenite::accept_async;
@@ -16,6 +17,7 @@ use std::sync::Arc;
 
 #[actix::main]
 async fn main() {
+    let sys = System::new();
     SupervisorActor::start_supervisor();
 
     let addr = "127.0.0.1:8080".parse::<SocketAddr>().unwrap();
@@ -59,6 +61,8 @@ async fn main() {
     tokio::spawn(handle_proc_list_output(proc_list_rx, Arc::clone(&azure_client)));
     tokio::spawn(handle_load_output(load_list_rx, Arc::clone(&azure_client)));
     tokio::spawn(handle_speed_output(speed_list_rx, Arc::clone(&azure_client)));
+
+    sys.run().await.unwrap();
 }
 
 async fn handle_bash_output(bash_rx: std::sync::mpsc::Receiver<String>, azure_client: Arc<AzureDataLakeClient>) {
