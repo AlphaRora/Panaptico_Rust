@@ -2,8 +2,8 @@ use actix::prelude::*;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::Sender;
-use std::error::Error;
-use std::sync::Arc;
+use std::sync::{Arc, Rc};
+use std::cell::RefCell;
 use crate::azure_storage_client::AzureDataLakeClient;
 
 macro_rules! create_command_actor {
@@ -43,22 +43,29 @@ macro_rules! create_command_actor {
                     .expect("Failed to start command");
 
                 let stdout = process.stdout.expect("Failed to get stdout");
-                let reader = BufReader::new(stdout);
+                let reader = Rc::new(RefCell::new(BufReader::new(stdout)));
+
+                let tx = self.tx.clone();
+                let azure_client = Arc::clone(&self.azure_client);
+                let output_path = self.output_path.clone();
 
                 ctx.run_interval(std::time::Duration::from_secs(10), move |act, _| {
-                    for line in reader.lines() {
-                        match line {
-                            Ok(output) => {
-                                act.tx.send(output.clone()).expect("Failed to send output");
-                                let azure_client = Arc::clone(&act.azure_client);
-                                let output_path = act.output_path.clone();
-                                tokio::spawn(async move {
+                    let reader = Rc::clone(&reader);
+                    let azure_client = Arc::clone(&azure_client);
+                    let output_path = output_path.clone();
+                    let tx = tx.clone();
+                    
+                    tokio::spawn(async move {
+                        for line in reader.borrow_mut().lines() {
+                            match line {
+                                Ok(output) => {
+                                    tx.send(output.clone()).expect("Failed to send output");
                                     azure_client.upload(&output_path, &output).await.unwrap();
-                                });
+                                }
+                                Err(e) => println!("Error reading line: {}", e),
                             }
-                            Err(e) => println!("Error reading line: {}", e),
                         }
-                    }
+                    });
                 });
             }
         }
