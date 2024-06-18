@@ -7,10 +7,11 @@ use actix::Actor;
 use actix_rt::System;  
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};  
 use actix_web_actors::ws;  
+use futures::StreamExt;  
+use tokio_tungstenite::accept_async;  
 use tokio_tungstenite::tungstenite::protocol::Message;  
 use tokio_tungstenite::WebSocketStream;  
 use tokio::net::TcpListener;  
-use tokio::stream::StreamExt;  
 use std::net::SocketAddr;  
 use std::sync::Arc;  
 use websocket_actor::WebSocketActor;  
@@ -19,12 +20,7 @@ use command_actor::*;
 use azure_storage_client::AzureDataLakeClient;  
   
 async fn websocket_handler(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {  
-    let (response, session) = ws::handshake(&req)?;  
-    let actor = WebSocketActor::new(stream);  
-    actix_rt::spawn(async move {  
-        ws::WebSocketContext::create(actor, session);  
-    });  
-    Ok(response)  
+    ws::start(WebSocketActor::new(), &req, stream)  
 }  
   
 #[actix_rt::main]  
