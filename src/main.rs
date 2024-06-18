@@ -14,38 +14,36 @@ use command_actor::*;
 use azure_storage_client::AzureDataLakeClient;  
 use std::sync::Arc;  
 use actix_web_actors::ws;  
-use actix_web::HttpRequest;  
-use actix_web::HttpServer;  
-use actix_web::App;  
+use actix_web::{HttpServer, App, HttpRequest, HttpResponse, web, Error};  
+  
+async fn websocket_route(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {  
+    ws::start(WebSocketActor::new(stream), &req, stream)  
+}  
   
 #[actix_rt::main]  
 async fn main() {  
-    let sys = System::new();  
+    // Supervisor initialization  
     SupervisorActor::start_supervisor();  
-      
-    let addr = "127.0.0.1:8080".parse::<SocketAddr>().unwrap();  
-    let listener = TcpListener::bind(addr).await.expect("Failed to bind to address");  
-    println!("WebSocket server listening on {}", addr);  
-      
-    while let Ok((stream, _)) = listener.accept().await {  
-        let ws_stream = accept_async(stream)  
-            .await  
-            .expect("Failed to accept WebSocket connection");  
-        actix_rt::spawn(async move {  
-            let req = HttpRequest::default(); // Dummy HttpRequest for example  
-            match ws::start(WebSocketActor::new(ws_stream), &req, stream) {  
-                Ok(response) => response,  
-                Err(e) => e.into(),  
-            };  
-        });  
-    }  
   
+    // Azure client initialization  
     let azure_client = Arc::new(AzureDataLakeClient::new(  
         "datalakestoragepanaptico",  
         "ACCESS_KEY",  
         "machinelogs",  
     ));  
   
+    // Start HTTP server for WebSocket connections  
+    HttpServer::new(|| {  
+        App::new()  
+            .route("/ws/", web::get().to(websocket_route))  
+    })  
+    .bind("127.0.0.1:8080")  
+    .expect("Failed to bind to address")  
+    .run()  
+    .await  
+    .expect("Failed to run HTTP server");  
+  
+    // Command actors initialization  
     let (bash_tx, bash_rx) = std::sync::mpsc::channel();  
     let (glances_tx, glances_rx) = std::sync::mpsc::channel();  
     let (num_procs_tx, num_procs_rx) = std::sync::mpsc::channel();  
@@ -71,8 +69,7 @@ async fn main() {
     tokio::spawn(handle_load_output(load_list_rx, Arc::clone(&azure_client)));  
     tokio::spawn(handle_speed_output(speed_list_rx, Arc::clone(&azure_client)));  
   
-    // Remove the `.await` since `sys.run()` is not a future  
-    sys.run().unwrap();  
+    System::current().stop();  
 }  
   
 async fn handle_bash_output(bash_rx: std::sync::mpsc::Receiver<String>, azure_client: Arc<AzureDataLakeClient>) {  
