@@ -41,24 +41,22 @@ macro_rules! create_command_actor {
                     .stdout(Stdio::piped())
                     .spawn()
                     .expect("Failed to start command");
-
                 let stdout = process.stdout.expect("Failed to get stdout");
                 let reader = BufReader::new(stdout);
-                let reader_mutex = Arc::new(Mutex::new(reader));
-
+                let reader_arc = Arc::new(Mutex::new(reader));
                 let azure_client = Arc::clone(&self.azure_client);
                 let output_path = self.output_path.clone();
                 let tx = self.tx.clone();
-
                 ctx.run_interval(std::time::Duration::from_secs(10), move |act, _| {
+                    let reader_mutex = Arc::clone(&reader_arc);
                     let mut reader = reader_mutex.lock().unwrap();
                     for line in reader.lines() {
                         match line {
                             Ok(output) => {
-                                let output = output.clone();
                                 tx.send(output.clone()).expect("Failed to send output");
                                 let azure_client = Arc::clone(&azure_client);
                                 let output_path = output_path.clone();
+                                let output = output.clone();
                                 tokio::spawn(async move {
                                     azure_client.upload(&output_path, &output).await.unwrap();
                                 });
