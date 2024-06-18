@@ -65,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(handle_load_output(load_list_rx, Arc::clone(&azure_client)));
     tokio::spawn(handle_speed_output(speed_list_rx, Arc::clone(&azure_client)));
 
-    System::current().await.unwrap();
+    System::current().run().await;
 
     Ok(())
 }
