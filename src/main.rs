@@ -4,7 +4,7 @@ mod command_actor;
 mod azure_storage_client;
 
 use actix::Actor;
-use actix_rt::System;
+use actix_rt;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
 use futures::StreamExt;
@@ -65,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(handle_load_output(load_list_rx, Arc::clone(&azure_client)));
     tokio::spawn(handle_speed_output(speed_list_rx, Arc::clone(&azure_client)));
 
-    System::current().run().await;
+    actix_rt::System::current().await.unwrap();
 
     Ok(())
 }
