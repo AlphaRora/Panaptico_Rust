@@ -65,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(handle_load_output(load_list_rx, Arc::clone(&azure_client)));
     tokio::spawn(handle_speed_output(speed_list_rx, Arc::clone(&azure_client)));
 
-    actix_rt::System::current().run();
+    actix_rt::System::new().run().await;
 
     Ok(())
 }
@@ -76,6 +76,8 @@ async fn handle_bash_output(bash_rx: std::sync::mpsc::Receiver<String>, azure_cl
         azure_client.upload("bash_output.txt", &command_output).await.unwrap();
     }
 }
+
+// ... (the rest of the functions remain the same)
 
 async fn handle_glances_output(glances_rx: std::sync::mpsc::Receiver<String>, azure_client: Arc<AzureDataLakeClient>) {
     for command_output in glances_rx {
