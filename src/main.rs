@@ -15,10 +15,8 @@ use command_actor::*;
 use azure_storage_client::AzureDataLakeClient;
 
 async fn websocket_handler(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
-    let (response, _) = ws::start(WebSocketActor::new(), &req, stream)?;
-    Ok(response)
+    ws::start(WebSocketActor::new(), &req, stream)
 }
-
 
 #[actix_rt::main]
 async fn main() {
