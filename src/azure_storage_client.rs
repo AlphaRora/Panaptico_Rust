@@ -1,8 +1,8 @@
 use azure_storage::core::prelude::*;  
 use azure_storage_blobs::prelude::*;  
-use std::error::Error;  
 use std::sync::Arc;  
 use azure_core::new_http_client;  
+use std::error::Error;  
   
 pub struct AzureDataLakeClient {  
     client: Arc<StorageAccountClient>,  
@@ -23,7 +23,7 @@ impl AzureDataLakeClient {
         let container_client = self.client.as_container_client(&self.container_name);  
         let blob_client = container_client.as_blob_client(blob_name);  
   
-        blob_client.put_block_blob(data.to_string()).await?;  
+        blob_client.put_block_blob(data.to_string()).execute().await?;  
         Ok(())  
     }  
 }  

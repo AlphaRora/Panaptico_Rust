@@ -13,7 +13,7 @@ use supervisor::SupervisorActor;
 use command_actor::*;  
 use azure_storage_client::AzureDataLakeClient;  
 use std::sync::Arc;  
-use actix::Arbiter;  
+use actix_web_actors::ws;  
   
 #[actix_rt::main]  
 async fn main() {  
@@ -28,8 +28,9 @@ async fn main() {
         let ws_stream = accept_async(stream)  
             .await  
             .expect("Failed to accept WebSocket connection");  
-        Arbiter::spawn(async move {  
-            WebSocketActor::new(ws_stream).start();  
+        actix_rt::spawn(async move {  
+            let (response, _) = ws::start(WebSocketActor::new(ws_stream), &stream);  
+            response.await.expect("Failed to start WebSocketActor");  
         });  
     }  
   
