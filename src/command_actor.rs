@@ -1,9 +1,9 @@
-// command_actors.rs
 use actix::prelude::*;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::Sender;
 use std::error::Error;
+use std::sync::Arc;
 use crate::azure_storage_client::AzureDataLakeClient;
 
 macro_rules! create_command_actor {
@@ -16,139 +16,59 @@ macro_rules! create_command_actor {
 
         impl $actor_name {
             pub fn new(tx: Sender<String>, azure_client: Arc<AzureDataLakeClient>) -> Self {
-                $actor_name { tx, azure_client, output_path: $output_path.to_string() }
+                $actor_name {
+                    tx,
+                    azure_client,
+                    output_path: $output_path.to_string(),
+                }
             }
         }
 
         impl Actor for $actor_name {
             type Context = Context<Self>;
+
+            fn started(&mut self, ctx: &mut Self::Context) {
+                println!("{} started", stringify!($actor_name));
+                self.$command_fn(ctx);
+            }
         }
 
-        pub struct $command_fn;
-
-        impl Message for $command_fn {
-            type Result = Result<(), Box<dyn Error>>;
-        }
-
-        impl Handler<$command_fn> for $actor_name {
-            type Result = Result<(), Box<dyn Error>>;
-
-            fn handle(&mut self, _: $command_fn, _: &mut Self::Context) -> Self::Result {
-                let mut child = Command::new("bash")
+        impl $actor_name {
+            fn $command_fn(&self, ctx: &mut <Self as Actor>::Context) {
+                let process = Command::new("bash")
                     .arg("-c")
                     .arg($command)
                     .stdout(Stdio::piped())
-                    .spawn()?;
+                    .spawn()
+                    .expect("Failed to start command");
 
-                let stdout = child.stdout.take().ok_or("Failed to get child stdout")?;
-                let stdout_reader = BufReader::new(stdout);
-                let mut output = String::new();
+                let stdout = process.stdout.expect("Failed to get stdout");
+                let reader = BufReader::new(stdout);
 
-                for line in stdout_reader.lines() {
-                    let output_line = line?;
-                    self.tx.send(output_line.clone())?;
-                    output.push_str(&output_line);
-                    output.push('\n');
-                }
-
-                let azure_client = Arc::clone(&self.azure_client);
-                let output_path = self.output_path.clone();
-                Arbiter::spawn(async move {
-                    let _ = azure_client.upload_data(&output_path, &output).await;
+                ctx.run_interval(std::time::Duration::from_secs(10), move |act, _| {
+                    for line in reader.lines() {
+                        match line {
+                            Ok(output) => {
+                                act.tx.send(output.clone()).expect("Failed to send output");
+                                let azure_client = Arc::clone(&act.azure_client);
+                                let output_path = act.output_path.clone();
+                                tokio::spawn(async move {
+                                    azure_client.upload(&output_path, &output).await.unwrap();
+                                });
+                            }
+                            Err(e) => println!("Error reading line: {}", e),
+                        }
+                    }
                 });
-
-                Ok(())
             }
         }
     };
 }
 
-// Define actors for each command using the macro, specifying the output path
-create_command_actor!(
-    BashCommandActor,
-    r#"
-        interval=5;
-        process_name="tritonserver --model-repository=/mnt/models";
-        pid=$(pgrep -f "$process_name");
-        if [[ -z "$pid" ]]; then
-            echo "Error: Inference process not found. Please provide the correct process name.";
-            exit 1;
-        fi;
-        echo "Monitoring wait time for processes targets: $process_name (PID: $pid)";
-        echo "---------------------------------------------------------";
-        while true; do 
-        echo "Iteration start"
-        iostat -d -x 1 $interval | tail -n +3; 
-        pidstat -d -p $pid $interval | tail -n +4 | awk '{print "I/O Wait (%): " $11}'; 
-        echo "---------------------------------------------------------"; 
-    done
-    "#,
-    ExecuteBashCommand,
-    "bash_command_output.txt"
-);
-
-create_command_actor!(
-    GlancesCommandActor,
-    "sudo glances --export csv --export-csv-file=/tmp/glances.csv",
-    ExecuteGlancesCommand,
-    "glances_output.txt"
-);
-
-create_command_actor!(
-    NumberOfProcessesCommandActor,
-    "ps -ef | wc -l",
-    ExecuteNumberOfProcessesCommand,
-    "num_procs_output.txt"
-);
-
-create_command_actor!(
-    TopProcessCommandActor,
-    "ps aux --no-headers --sort=-pcpu | head -n 1",
-    ExecuteTopProcessCommand,
-    "top_proc_output.txt"
-);
-
-create_command_actor!(
-    ProcessListCommandActor,
-    "ps aux --no-headers --sort=-pcpu",
-    ExecuteProcessListCommand,
-    "proc_list_output.txt"
-);
-
-create_command_actor!(
-    NetworkSpeedCommandActor,
-    r#"
-    devices=$(ip -o link show | awk -F': ' '{print $2}');
-    for dev in $devices; do
-        speed=$(ethtool $dev 2>/dev/null | grep "Speed" | awk '{print $2}');
-        if [ -n "$speed" ]; then
-            echo "Device: $dev, Speed: $speed";
-        fi;
-    done
-    "#,
-    ExecuteNetworkSpeedCommand,
-    "network_speed_output.txt"
-);
-
-create_command_actor!(
-    NetworkLoadCommandActor,
-    r#"
-    devices=$(netstat -i | awk 'NR>2 {print $1}' | grep -v ^lo);
-    for device in $devices
-    do
-        rx_bytes=$(cat /sys/class/net/"$device"/statistics/rx_bytes);
-        tx_bytes=$(cat /sys/class/net/"$device"/statistics/tx_bytes);
-        rx_packets=$(cat /sys/class/net/"$device"/statistics/rx_packets);
-        tx_packets=$(cat /sys/class/net/"$device"/statistics/tx_packets);
-
-        echo "----- $device -----";
-        echo "Received Bytes: $rx_bytes";
-        echo "Transmitted Bytes: $tx_bytes";
-        echo "Received Packets: $rx_packets";
-        echo "Transmitted Packets: $tx_packets";
-        echo;
-    done
-    "#,
-    ExecuteNetworkLoadCommand,
-    "network_load_output.txt"
-);
+create_command_actor!(BashCommandActor, "some bash command", run_bash_command, "bash_output.txt");
+create_command_actor!(GlancesCommandActor, "glances --stdout", run_glances_command, "glances_output.txt");
+create_command_actor!(NumberOfProcessesCommandActor, "ps -e | wc -l", run_num_procs_command, "num_procs_output.txt");
+create_command_actor!(TopProcessCommandActor, "ps -eo pid,comm,%mem,%cpu --sort=-%mem | head -n 2", run_top_proc_command, "top_proc_output.txt");
+create_command_actor!(ProcessListCommandActor, "ps -e", run_proc_list_command, "proc_list_output.txt");
+create_command_actor!(NetworkLoadCommandActor, "some network load command", run_load_command, "load_output.txt");
+create_command_actor!(NetworkSpeedCommandActor, "some network speed command", run_speed_command, "speed_output.txt");

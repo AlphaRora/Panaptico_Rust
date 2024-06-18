@@ -15,7 +15,7 @@ use command_actors::*;
 use azure_storage_client::AzureDataLakeClient;
 use std::sync::Arc;
 
-#[actix::main]
+#[actix_rt::main]
 async fn main() {
     let sys = System::new();
     SupervisorActor::start_supervisor();

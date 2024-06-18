@@ -1,7 +1,5 @@
-// supervisor.rs
 use actix::prelude::*;
 use actix::{Actor, Context, Supervised, Supervisor, System};
-use std::sync::mpsc::{Sender, Receiver};
 
 pub struct SupervisorActor;
 
