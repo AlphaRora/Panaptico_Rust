@@ -3,11 +3,13 @@ use actix_web_actors::ws;
 use tokio::net::TcpStream;  
 use tokio_tungstenite::WebSocketStream;  
   
-pub struct WebSocketActor;  
+pub struct WebSocketActor {  
+    ws_stream: WebSocketStream<TcpStream>,  
+}  
   
 impl WebSocketActor {  
-    pub fn new() -> Self {  
-        WebSocketActor  
+    pub fn new(ws_stream: WebSocketStream<TcpStream>) -> Self {  
+        WebSocketActor { ws_stream }  
     }  
 }  
   
