@@ -12,8 +12,6 @@ impl Supervised for SupervisorActor {
     }  
 }  
   
-impl Supervisor for SupervisorActor {}  
-  
 impl SupervisorActor {  
     pub fn start_supervisor() {  
         let _ = SupervisorActor.start();  
