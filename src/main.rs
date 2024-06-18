@@ -25,7 +25,7 @@ async fn main() -> std::io::Result<()> {
     // Azure client initialization  
     let azure_client = Arc::new(AzureDataLakeClient::new(  
         "datalakestoragepanaptico",  
-        "ACCESS_KEY",  
+        "9jbBeRvofUNNbsGq1PZz12Sam3Cy3YTB5eEQGNQI0aNl9Bc+rOltco2zoTt3qm8Gb8FihOHdPDwW+ASt+0vdlQ==",  
         "machinelogs",  
     ));  
   
