@@ -5,19 +5,26 @@ mod azure_storage_client;
   
 use actix::Actor;  
 use actix_rt::System;  
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};  
+use actix_web_actors::ws;  
+use tokio_tungstenite::tungstenite::protocol::Message;  
+use tokio_tungstenite::WebSocketStream;  
 use tokio::net::TcpListener;  
+use tokio::stream::StreamExt;  
 use std::net::SocketAddr;  
-use tokio_tungstenite::accept_async;  
+use std::sync::Arc;  
 use websocket_actor::WebSocketActor;  
 use supervisor::SupervisorActor;  
 use command_actor::*;  
 use azure_storage_client::AzureDataLakeClient;  
-use std::sync::Arc;  
-use actix_web_actors::ws;  
-use actix_web::{HttpServer, App, HttpRequest, HttpResponse, web, Error};  
   
-async fn websocket_route(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {  
-    ws::start(WebSocketActor::new(stream), &req, stream)  
+async fn websocket_handler(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {  
+    let (response, session) = ws::handshake(&req)?;  
+    let actor = WebSocketActor::new(stream);  
+    actix_rt::spawn(async move {  
+        ws::WebSocketContext::create(actor, session);  
+    });  
+    Ok(response)  
 }  
   
 #[actix_rt::main]  
@@ -35,7 +42,7 @@ async fn main() {
     // Start HTTP server for WebSocket connections  
     HttpServer::new(|| {  
         App::new()  
-            .route("/ws/", web::get().to(websocket_route))  
+            .route("/ws/", web::get().to(websocket_handler))  
     })  
     .bind("127.0.0.1:8080")  
     .expect("Failed to bind to address")  
