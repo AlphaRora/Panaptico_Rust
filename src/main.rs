@@ -1,6 +1,6 @@
 mod websocket_actor;
 mod supervisor;
-mod command_actors;
+mod command_actor;
 mod azure_storage_client;
 
 use actix::Actor;
@@ -11,7 +11,7 @@ use std::net::SocketAddr;
 use tokio_tungstenite::accept_async;
 use websocket_actor::WebSocketActor;
 use supervisor::SupervisorActor;
-use command_actors::*;
+use command_actor::*;
 use azure_storage_client::AzureDataLakeClient;
 use std::sync::Arc;
 
