@@ -19,7 +19,7 @@ impl AzureDataLakeClient {
         }  
     }  
   
-    pub async fn upload(&self, blob_name: &str, data: &str) -> Result<(), Box<dyn Error>> {  
+    pub async fn upload(&self, blob_name: &str, data: &str) -> Result<(), Box<dyn Error + Send + Sync>> {  
         let container_client = self.client.as_container_client(&self.container_name);  
         let blob_client = container_client.as_blob_client(blob_name);  
   

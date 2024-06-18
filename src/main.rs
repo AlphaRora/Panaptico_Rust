@@ -14,6 +14,9 @@ use command_actor::*;
 use azure_storage_client::AzureDataLakeClient;  
 use std::sync::Arc;  
 use actix_web_actors::ws;  
+use actix_web::HttpRequest;  
+use actix_web::HttpServer;  
+use actix_web::App;  
   
 #[actix_rt::main]  
 async fn main() {  
@@ -29,8 +32,11 @@ async fn main() {
             .await  
             .expect("Failed to accept WebSocket connection");  
         actix_rt::spawn(async move {  
-            let (response, _) = ws::start(WebSocketActor::new(ws_stream), &stream);  
-            response.await.expect("Failed to start WebSocketActor");  
+            let req = HttpRequest::default(); // Dummy HttpRequest for example  
+            match ws::start(WebSocketActor::new(ws_stream), &req, stream) {  
+                Ok(response) => response,  
+                Err(e) => e.into(),  
+            };  
         });  
     }  
   
