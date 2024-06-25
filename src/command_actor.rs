@@ -35,36 +35,70 @@ macro_rules! create_command_actor {
 
         impl $actor_name {
             fn $command_fn(&self, ctx: &mut <Self as Actor>::Context) {
-                let process = Command::new("bash")
+                let process = match Command::new("bash")
                     .arg("-c")
                     .arg($command)
                     .stdout(Stdio::piped())
                     .spawn()
-                    .expect("Failed to start command");
-                let stdout = process.stdout.expect("Failed to get stdout");
+                {
+                    Ok(process) => process,
+                    Err(e) => {
+                        eprintln!("Failed to start command: {}", e);
+                        ctx.stop();
+                        return;
+                    }
+                };
+
+                let stdout = match process.stdout {
+                    Some(stdout) => stdout,
+                    None => {
+                        eprintln!("Failed to get stdout");
+                        ctx.stop();
+                        return;
+                    }
+                };
+
                 let reader = BufReader::new(stdout);
                 let reader_mutex = Arc::new(Mutex::new(reader));
                 let azure_client = Arc::clone(&self.azure_client);
                 let output_path = self.output_path.clone();
                 let tx = self.tx.clone();
-                ctx.run_interval(std::time::Duration::from_secs(10), move |_act, _ctx| {
+
+                ctx.run_interval(std::time::Duration::from_secs(10), move |_act, ctx| {
                     let reader_mutex = Arc::clone(&reader_mutex);
-                    let mut reader_guard = reader_mutex.lock().unwrap();
+                    let mut reader_guard = match reader_mutex.lock() {
+                        Ok(guard) => guard,
+                        Err(e) => {
+                            eprintln!("Failed to acquire lock: {}", e);
+                            ctx.stop();
+                            return;
+                        }
+                    };
+
                     let mut buffer = String::new();
-                    loop {
-                        buffer.clear();
-                        match reader_guard.read_line(&mut buffer) {
-                            Ok(0) => break, // End of stream
-                            Ok(_) => {
-                                let output = buffer.trim_end().to_string();
-                                tx.send(output.clone()).expect("Failed to send output");
-                                let azure_client = Arc::clone(&azure_client);
-                                let output_path = output_path.clone();
-                                tokio::spawn(async move {
-                                    azure_client.upload(&output_path, &output).await.unwrap();
-                                });
+                    match reader_guard.read_line(&mut buffer) {
+                        Ok(0) => {
+                            println!("{} command completed", stringify!($actor_name));
+                            ctx.stop();
+                        },
+                        Ok(_) => {
+                            let output = buffer.trim_end().to_string();
+                            if let Err(e) = tx.send(output.clone()) {
+                                eprintln!("Failed to send output: {}", e);
+                                ctx.stop();
+                                return;
                             }
-                            Err(e) => println!("Error reading line: {}", e),
+                            let azure_client = Arc::clone(&azure_client);
+                            let output_path = output_path.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) = azure_client.upload(&output_path, &output).await {
+                                    eprintln!("Failed to upload to Azure: {}", e);
+                                }
+                            });
+                        }
+                        Err(e) => {
+                            eprintln!("Error reading line: {}", e);
+                            ctx.stop();
                         }
                     }
                 });
@@ -73,10 +107,22 @@ macro_rules! create_command_actor {
     };
 }
 
-create_command_actor!(BashCommandActor, "some bash command", run_bash_command, "bash_output.txt");
-create_command_actor!(GlancesCommandActor, "glances --stdout", run_glances_command, "glances_output.txt");
+// Define command actors with correct commands
+create_command_actor!(BashCommandActor, "echo 'Hello, World!'", run_bash_command, "bash_output.txt");
+create_command_actor!(SystemInfoCommandActor, "uname -a", run_system_info_command, "system_info_output.txt");
 create_command_actor!(NumberOfProcessesCommandActor, "ps -e | wc -l", run_num_procs_command, "num_procs_output.txt");
 create_command_actor!(TopProcessCommandActor, "ps -eo pid,comm,%mem,%cpu --sort=-%mem | head -n 2", run_top_proc_command, "top_proc_output.txt");
 create_command_actor!(ProcessListCommandActor, "ps -e", run_proc_list_command, "proc_list_output.txt");
-create_command_actor!(NetworkLoadCommandActor, "some network load command", run_load_command, "load_output.txt");
-create_command_actor!(NetworkSpeedCommandActor, "some network speed command", run_speed_command, "speed_output.txt");
+create_command_actor!(NetworkLoadCommandActor, "netstat -i | tail -n +3 | awk '{print $3, $4, $5}'", run_load_command, "load_output.txt");
+create_command_actor!(DiskUsageCommandActor, "df -h", run_disk_usage_command, "disk_usage_output.txt");
+
+// Main function to start all actors
+pub fn start_command_actors(system: &mut actix::System, tx: Sender<String>, azure_client: Arc<AzureDataLakeClient>) {
+    let _ = BashCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = SystemInfoCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = NumberOfProcessesCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = TopProcessCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = ProcessListCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = NetworkLoadCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+    let _ = DiskUsageCommandActor::new(tx.clone(), Arc::clone(&azure_client)).start();
+}
